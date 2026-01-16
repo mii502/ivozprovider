@@ -1,0 +1,21 @@
+# IvozProvider WHMCS Integration - Doctrine ORM Mapping
+# Target: /opt/irontec/ivozprovider/library/Ivoz/Provider/Infrastructure/Persistence/Doctrine/Mapping/Company.CompanyAbstract.orm.xml
+# Purpose: Add whmcsClientId field mapping to Doctrine ORM.
+# Apply: cd /opt/irontec/ivozprovider/library && patch -p0 < Company.orm.xml.patch
+# Note: Database column whmcsClientId must already exist in Companies table.
+#
+--- Ivoz/Provider/Infrastructure/Persistence/Doctrine/Mapping/Company.CompanyAbstract.orm.xml.orig
++++ Ivoz/Provider/Infrastructure/Persistence/Doctrine/Mapping/Company.CompanyAbstract.orm.xml
+@@ -76,6 +76,12 @@
+             </options>
+         </field>
+
++        <field name="whmcsClientId" type="integer" column="whmcsClientId" nullable="true">
++            <options>
++                <option name="unsigned">1</option>
++            </options>
++        </field>
++
+         <field name="showInvoices" type="boolean" column="showInvoices" nullable="false">
+             <options>
+                 <option name="default">1</option>

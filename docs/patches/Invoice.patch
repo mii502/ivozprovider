@@ -1,0 +1,21 @@
+# IvozProvider Balance TopUp - Skip Validity Check
+# Target: /opt/irontec/ivozprovider/library/Ivoz/Provider/Domain/Model/Invoice/Invoice.php
+# Purpose: Balance topup invoices are instant, same-day invoices that don't need
+#          period-based date validation. Without this patch, creating a balance_topup
+#          invoice triggers "Forbidden future dates" error from CheckValidity service.
+# Apply: cd /opt/irontec/ivozprovider/library && patch -p0 < Invoice.patch
+#
+--- Ivoz/Provider/Domain/Model/Invoice/Invoice.php.orig
++++ Ivoz/Provider/Domain/Model/Invoice/Invoice.php
+@@ -42,6 +42,11 @@
+
+     public function mustCheckValidity(): bool
+     {
++        // Skip validity check for balance_topup invoices (instant invoices, not period-based)
++        if ($this->getInvoiceType() === self::INVOICE_TYPE_BALANCE_TOPUP) {
++            return false;
++        }
++
+         $scheduledInvoice = $this->getScheduler();
+         $mustRunInvoicer = $this->mustRunInvoicer();
+

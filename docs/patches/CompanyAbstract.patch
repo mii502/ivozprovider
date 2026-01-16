@@ -1,0 +1,38 @@
+# IvozProvider WHMCS Integration - Company whmcsClientId Field
+# Target: /opt/irontec/ivozprovider/library/Ivoz/Provider/Domain/Model/Company/CompanyAbstract.php
+# Purpose: Links IvozProvider companies to WHMCS clients for billing integration.
+# Apply: cd /opt/irontec/ivozprovider/library && patch -p0 < CompanyAbstract.patch
+#
+--- Ivoz/Provider/Domain/Model/Company/CompanyAbstract.php.orig
++++ Ivoz/Provider/Domain/Model/Company/CompanyAbstract.php
+@@ -137,6 +137,11 @@
+      */
+     protected $balance = 0;
+
++    /**
++     * @var ?int
++     */
++    protected $whmcsClientId = null;
++
+     /**
+      * @var bool
+      */
+@@ -894,6 +899,19 @@
+         return $this->balance;
+     }
+
++    protected function setWhmcsClientId(?int $whmcsClientId = null): static
++    {
++        $this->whmcsClientId = $whmcsClientId;
++
++        return $this;
++    }
++
++    public function getWhmcsClientId(): ?int
++    {
++        return $this->whmcsClientId;
++    }
++
+     protected function setShowInvoices(bool $showInvoices): static
+     {
+         $this->showInvoices = $showInvoices;

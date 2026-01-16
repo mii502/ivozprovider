@@ -1,0 +1,16 @@
+# IvozProvider WHMCS Integration - Company Interface Method
+# Target: /opt/irontec/ivozprovider/library/Ivoz/Provider/Domain/Model/Company/CompanyInterface.php
+# Purpose: Add getWhmcsClientId method signature to interface.
+# Apply: cd /opt/irontec/ivozprovider/library && patch -p0 < CompanyInterface.patch
+#
+--- Ivoz/Provider/Domain/Model/Company/CompanyInterface.php.orig
++++ Ivoz/Provider/Domain/Model/Company/CompanyInterface.php
+@@ -123,6 +123,8 @@
+
+     public function getBalance(): ?float;
+
++    public function getWhmcsClientId(): ?int;
++
+     public function getShowInvoices(): bool;
+
+     public function getInvoicing(): ?InvoicingInterface;
