@@ -235,3 +235,64 @@ post_fax_resend:
 get_users_detailed:
   path: '/users/detailed'
   methods: ['GET']
+
+###############################
+## Balance Top-Up Routes
+###############################
+
+get_balance:
+  path: '/balance'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\BalanceTopUp\GetBalanceAction
+    _api_resource_class: 'Model\Balance'
+    _api_item_operation_name: 'get_balance'
+    _api_receive: false
+
+post_balance_topup:
+  path: '/balance/topup'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\BalanceTopUp\TopUpAction
+    _api_resource_class: 'Model\TopUpResult'
+    _api_collection_operation_name: 'post_balance_topup'
+    _api_receive: false
+
+get_balance_history:
+  path: '/balance/history'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\BalanceTopUp\GetHistoryAction
+    _api_resource_class: 'Model\TransactionHistory'
+    _api_collection_operation_name: 'get_balance_history'
+    _api_receive: false
+
+###############################
+## DID Marketplace Routes
+###############################
+
+# Browse available DIDs with filtering and pagination
+get_dids_marketplace:
+  path: '/dids/marketplace'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\Provider\GetDidMarketplaceAction
+    _api_receive: false
+
+# Get countries with available DIDs
+get_dids_marketplace_countries:
+  path: '/dids/marketplace/countries'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\Provider\GetDidMarketplaceCountriesAction
+    _api_receive: false
+
+# Get single available DID details
+get_dids_marketplace_item:
+  path: '/dids/marketplace/{id}'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\Provider\GetDidMarketplaceItemAction
+    _api_receive: false
+  requirements:
+    id: '\d+'

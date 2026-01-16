@@ -245,6 +245,18 @@ abstract class CompanyAbstract
     protected $location = null;
 
     /**
+     * @var ?\DateTimeInterface
+     * DID Marketplace: Anchor date for consolidated renewal mode
+     */
+    protected $didRenewalAnchor = null;
+
+    /**
+     * @var ?int
+     * WHMCS Integration: Links Company to WHMCS client ID
+     */
+    protected $whmcsClientId = null;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -413,7 +425,9 @@ abstract class CompanyAbstract
             ->setCorporation($fkTransformer->transform($dto->getCorporation()))
             ->setApplicationServerSet($fkTransformer->transform($applicationServerSet))
             ->setMediaRelaySet($fkTransformer->transform($mediaRelaySet))
-            ->setLocation($fkTransformer->transform($dto->getLocation()));
+            ->setLocation($fkTransformer->transform($dto->getLocation()))
+            ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
+            ->setWhmcsClientId($dto->getWhmcsClientId());
 
         $self->initChangelog();
 
@@ -512,7 +526,9 @@ abstract class CompanyAbstract
             ->setCorporation($fkTransformer->transform($dto->getCorporation()))
             ->setApplicationServerSet($fkTransformer->transform($applicationServerSet))
             ->setMediaRelaySet($fkTransformer->transform($mediaRelaySet))
-            ->setLocation($fkTransformer->transform($dto->getLocation()));
+            ->setLocation($fkTransformer->transform($dto->getLocation()))
+            ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
+            ->setWhmcsClientId($dto->getWhmcsClientId());
 
         return $this;
     }
@@ -565,7 +581,9 @@ abstract class CompanyAbstract
             ->setCorporation(Corporation::entityToDto(self::getCorporation(), $depth))
             ->setApplicationServerSet(ApplicationServerSet::entityToDto(self::getApplicationServerSet(), $depth))
             ->setMediaRelaySet(MediaRelaySet::entityToDto(self::getMediaRelaySet(), $depth))
-            ->setLocation(Location::entityToDto(self::getLocation(), $depth));
+            ->setLocation(Location::entityToDto(self::getLocation(), $depth))
+            ->setDidRenewalAnchor(self::getDidRenewalAnchor())
+            ->setWhmcsClientId(self::getWhmcsClientId());
     }
 
     /**
@@ -616,7 +634,9 @@ abstract class CompanyAbstract
             'corporationId' => self::getCorporation()?->getId(),
             'applicationServerSetId' => self::getApplicationServerSet()->getId(),
             'mediaRelaySetId' => self::getMediaRelaySet()->getId(),
-            'locationId' => self::getLocation()?->getId()
+            'locationId' => self::getLocation()?->getId(),
+            'didRenewalAnchor' => self::getDidRenewalAnchor(),
+            'whmcsClientId' => self::getWhmcsClientId()
         ];
     }
 
@@ -1147,5 +1167,29 @@ abstract class CompanyAbstract
     public function getLocation(): ?LocationInterface
     {
         return $this->location;
+    }
+
+    protected function setDidRenewalAnchor(?\DateTimeInterface $didRenewalAnchor = null): static
+    {
+        $this->didRenewalAnchor = $didRenewalAnchor;
+
+        return $this;
+    }
+
+    public function getDidRenewalAnchor(): ?\DateTimeInterface
+    {
+        return $this->didRenewalAnchor;
+    }
+
+    protected function setWhmcsClientId(?int $whmcsClientId = null): static
+    {
+        $this->whmcsClientId = $whmcsClientId;
+
+        return $this;
+    }
+
+    public function getWhmcsClientId(): ?int
+    {
+        return $this->whmcsClientId;
     }
 }

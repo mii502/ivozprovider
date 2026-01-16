@@ -5,3 +5,4 @@ imports:
   - { resource: 'infraestructure/jobs.yml' }
   - { resource: 'infraestructure/repositories.yml' }
   - { resource: 'infraestructure/rest.yml' }
+  - { resource: 'infraestructure/whmcs.yml' }

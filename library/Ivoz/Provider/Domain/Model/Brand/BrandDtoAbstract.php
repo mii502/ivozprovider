@@ -155,6 +155,11 @@ abstract class BrandDtoAbstract implements DataTransferObjectInterface
     private $maxDailyUsageNotificationTemplate = null;
 
     /**
+     * @var string|null
+     */
+    private $didRenewalMode = 'per_did';
+
+    /**
      * @var CompanyDto[] | null
      */
     private $companies = null;
@@ -252,7 +257,8 @@ abstract class BrandDtoAbstract implements DataTransferObjectInterface
             'faxNotificationTemplateId' => 'faxNotificationTemplate',
             'invoiceNotificationTemplateId' => 'invoiceNotificationTemplate',
             'callCsvNotificationTemplateId' => 'callCsvNotificationTemplate',
-            'maxDailyUsageNotificationTemplateId' => 'maxDailyUsageNotificationTemplate'
+            'maxDailyUsageNotificationTemplateId' => 'maxDailyUsageNotificationTemplate',
+            'didRenewalMode' => 'didRenewalMode'
         ];
     }
 
@@ -291,6 +297,7 @@ abstract class BrandDtoAbstract implements DataTransferObjectInterface
             'invoiceNotificationTemplate' => $this->getInvoiceNotificationTemplate(),
             'callCsvNotificationTemplate' => $this->getCallCsvNotificationTemplate(),
             'maxDailyUsageNotificationTemplate' => $this->getMaxDailyUsageNotificationTemplate(),
+            'didRenewalMode' => $this->getDidRenewalMode(),
             'companies' => $this->getCompanies(),
             'services' => $this->getServices(),
             'urls' => $this->getUrls(),
@@ -979,5 +986,17 @@ abstract class BrandDtoAbstract implements DataTransferObjectInterface
     public function getRelMediaRelaySets(): ?array
     {
         return $this->relMediaRelaySets;
+    }
+
+    public function setDidRenewalMode(string $didRenewalMode): static
+    {
+        $this->didRenewalMode = $didRenewalMode;
+
+        return $this;
+    }
+
+    public function getDidRenewalMode(): ?string
+    {
+        return $this->didRenewalMode;
     }
 }

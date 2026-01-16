@@ -258,3 +258,13 @@ post_ddis_unlink:
     _api_resource_class: 'Ivoz\Provider\Domain\Model\Ddi\Ddi'
     _api_collection_operation_name: 'post_ddis_unlink'
     _api_receive: false
+
+###############################
+## WHMCS Integration Webhooks
+###############################
+post_whmcs_invoice_paid_webhook:
+  path: '/webhooks/whmcs-paid'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Webhook\WhmcsPaidWebhookController
+    _api_receive: false

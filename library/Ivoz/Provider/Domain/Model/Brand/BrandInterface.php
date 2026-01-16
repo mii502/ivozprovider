@@ -32,6 +32,10 @@ use Ivoz\Core\Domain\Service\TempFile;
 */
 interface BrandInterface extends LoggableEntityInterface, FileContainerInterface
 {
+    public const DIDRENEWALMODE_PER_DID = 'per_did';
+
+    public const DIDRENEWALMODE_CONSOLIDATED = 'consolidated';
+
     /**
      * @codeCoverageIgnore
      * @return array<string, mixed>
@@ -160,6 +164,8 @@ interface BrandInterface extends LoggableEntityInterface, FileContainerInterface
     public function getCallCsvNotificationTemplate(): ?NotificationTemplateInterface;
 
     public function getMaxDailyUsageNotificationTemplate(): ?NotificationTemplateInterface;
+
+    public function getDidRenewalMode(): string;
 
     public function addCompany(CompanyInterface $company): BrandInterface;
 

@@ -302,6 +302,10 @@ interface CompanyInterface extends LoggableEntityInterface
 
     public function getLocation(): ?LocationInterface;
 
+    public function getDidRenewalAnchor(): ?\DateTimeInterface;
+
+    public function getWhmcsClientId(): ?int;
+
     public function addExtension(ExtensionInterface $extension): CompanyInterface;
 
     public function removeExtension(ExtensionInterface $extension): CompanyInterface;

@@ -77,5 +77,11 @@
         <join-column name="maxDailyUsageNotificationTemplateId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
       </join-columns>
     </many-to-one>
+    <field name="didRenewalMode" type="string" column="didRenewalMode" length="20" nullable="false">
+      <options>
+        <option name="comment">[enum:per_did|consolidated]</option>
+        <option name="default">per_did</option>
+      </options>
+    </field>
   </mapped-superclass>
 </doctrine-mapping>

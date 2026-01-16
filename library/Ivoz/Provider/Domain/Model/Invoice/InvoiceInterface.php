@@ -13,6 +13,7 @@ use Ivoz\Provider\Domain\Model\Company\CompanyInterface;
 use Ivoz\Provider\Domain\Model\InvoiceNumberSequence\InvoiceNumberSequenceInterface;
 use Ivoz\Provider\Domain\Model\InvoiceScheduler\InvoiceSchedulerInterface;
 use Ivoz\Provider\Domain\Model\FixedCostsRelInvoice\FixedCostsRelInvoiceInterface;
+use Ivoz\Provider\Domain\Model\Ddi\DdiInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Ivoz\Core\Domain\Service\TempFile;
@@ -22,6 +23,7 @@ use Ivoz\Core\Domain\Service\TempFile;
 */
 interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterface
 {
+    // Invoice generation status
     public const STATUS_WAITING = 'waiting';
 
     public const STATUS_PROCESSING = 'processing';
@@ -29,6 +31,24 @@ interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterfa
     public const STATUS_CREATED = 'created';
 
     public const STATUS_ERROR = 'error';
+
+    // Invoice types (for WHMCS integration)
+    public const INVOICE_TYPE_STANDARD = 'standard';
+
+    public const INVOICE_TYPE_DID_PURCHASE = 'did_purchase';
+
+    public const INVOICE_TYPE_DID_RENEWAL = 'did_renewal';
+
+    public const INVOICE_TYPE_BALANCE_TOPUP = 'balance_topup';
+
+    // WHMCS sync status
+    public const SYNC_STATUS_NOT_APPLICABLE = 'not_applicable';
+
+    public const SYNC_STATUS_PENDING = 'pending';
+
+    public const SYNC_STATUS_SYNCED = 'synced';
+
+    public const SYNC_STATUS_FAILED = 'failed';
 
     /**
      * @codeCoverageIgnore
@@ -145,4 +165,51 @@ interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterfa
      * @return null | \Ivoz\Core\Domain\Service\TempFile
      */
     public function getTempFileByFieldName($fldName);
+
+    // WHMCS sync fields
+    public function getWhmcsInvoiceId(): ?int;
+
+    public function getSyncStatus(): ?string;
+
+    public function getWhmcsSyncedAt(): ?\DateTime;
+
+    public function getWhmcsPaidAt(): ?\DateTime;
+
+    public function getSyncError(): ?string;
+
+    public function getSyncAttempts(): int;
+
+    public function getInvoiceType(): string;
+
+    public function getDdi(): ?DdiInterface;
+
+    /**
+     * Check if invoice should be synced to WHMCS
+     */
+    public function shouldSyncToWhmcs(): bool;
+
+    /**
+     * Check if invoice has been paid via WHMCS
+     */
+    public function isPaidViaWhmcs(): bool;
+
+    /**
+     * Mark invoice as synced to WHMCS
+     */
+    public function markAsSynced(int $whmcsInvoiceId): static;
+
+    /**
+     * Mark invoice as paid from WHMCS webhook
+     */
+    public function markAsPaid(): static;
+
+    /**
+     * Mark sync as failed with error message
+     */
+    public function markSyncFailed(string $error): static;
+
+    /**
+     * Increment sync attempts for retry logic
+     */
+    public function incrementSyncAttempts(): static;
 }

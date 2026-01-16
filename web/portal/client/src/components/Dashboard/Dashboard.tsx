@@ -1,3 +1,13 @@
+/**
+ * Modified Dashboard with Balance Top-Up Integration
+ * Server path: /opt/irontec/ivozprovider/web/portal/client/src/components/Dashboard/Dashboard.tsx
+ * Server: vm-ivozprovider-lab (185.16.41.36)
+ * Last updated: 2026-01-15
+ *
+ * PATCH: This file adds BalanceDisplay and TransactionHistory components to the dashboard.
+ * Changes marked with [BALANCE-TOPUP] comments.
+ */
+
 import {
   CircleChart,
   CircleProps,
@@ -13,6 +23,9 @@ import { CardsAmountFactory } from './cards/CardsAmountFactory';
 import { TableFactory } from './tables/TableFactory';
 import { TitleDescription } from './TitleDescription';
 
+// [BALANCE-TOPUP] Import balance components
+import { BalanceDisplay, TransactionHistory } from '../BalanceTopUp';
+
 export interface DashboardProps {
   className?: string;
 }
@@ -21,6 +34,9 @@ const Dashboard = (props: DashboardProps) => {
   const { className } = props;
   const [data, setData] = useState<DashboardData | null>(null);
   const [activeCalls, setActiveCalls] = useState<ActiveCalls | null>(null);
+  // [BALANCE-TOPUP] Track balance refresh for TransactionHistory
+  const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+
   const apiGet = useStoreActions((store) => store.api.get);
   const [, cancelToken] = useCancelToken();
 
@@ -43,6 +59,11 @@ const Dashboard = (props: DashboardProps) => {
       },
     });
   }, [apiGet, cancelToken]);
+
+  // [BALANCE-TOPUP] Handle top-up success - refresh transaction history
+  const handleTopUpSuccess = () => {
+    setBalanceRefreshTrigger((prev) => prev + 1);
+  };
 
   if (!data || !activeCalls) {
     return null;
@@ -85,6 +106,13 @@ const Dashboard = (props: DashboardProps) => {
           <img src='assets/img/dashboard-welcome.svg' />
         </div>
       </div>
+
+      {/* [BALANCE-TOPUP] Balance display card - shown for prepaid/pseudoprepaid accounts */}
+      <BalanceDisplay
+        className='card balance'
+        onTopUpSuccess={handleTopUpSuccess}
+      />
+
       <div className='card activity'>
         <div className='title'>{_('Client information')}</div>
 
@@ -157,6 +185,12 @@ const Dashboard = (props: DashboardProps) => {
       <div className='card last'>
         <TableFactory data={data} />
       </div>
+
+      {/* [BALANCE-TOPUP] Transaction history - spans 2 columns, refreshes on top-up */}
+      <TransactionHistory
+        className='card transactions'
+        refreshTrigger={balanceRefreshTrigger}
+      />
     </section>
   );
 };

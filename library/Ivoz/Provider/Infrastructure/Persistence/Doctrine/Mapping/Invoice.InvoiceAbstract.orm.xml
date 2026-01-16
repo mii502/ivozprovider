@@ -51,5 +51,36 @@
         <join-column name="invoiceSchedulerId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
       </join-columns>
     </many-to-one>
+    <!-- WHMCS sync fields -->
+    <field name="whmcsInvoiceId" type="integer" column="whmcsInvoiceId" nullable="true">
+      <options>
+        <option name="unsigned">true</option>
+      </options>
+    </field>
+    <field name="syncStatus" type="string" column="syncStatus" length="20" nullable="true">
+      <options>
+        <option name="default">not_applicable</option>
+        <option name="comment">[enum:not_applicable|pending|synced|failed]</option>
+      </options>
+    </field>
+    <field name="whmcsSyncedAt" type="datetime" column="whmcsSyncedAt" nullable="true"/>
+    <field name="whmcsPaidAt" type="datetime" column="whmcsPaidAt" nullable="true"/>
+    <field name="syncError" type="text" column="syncError" nullable="true"/>
+    <field name="syncAttempts" type="integer" column="syncAttempts" nullable="false">
+      <options>
+        <option name="default">0</option>
+      </options>
+    </field>
+    <field name="invoiceType" type="string" column="invoiceType" length="50" nullable="false">
+      <options>
+        <option name="default">standard</option>
+        <option name="comment">[enum:standard|did_purchase|did_renewal|balance_topup]</option>
+      </options>
+    </field>
+    <many-to-one field="ddi" target-entity="Ivoz\Provider\Domain\Model\Ddi\DdiInterface" fetch="LAZY">
+      <join-columns>
+        <join-column name="ddiId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
+      </join-columns>
+    </many-to-one>
   </mapped-superclass>
 </doctrine-mapping>

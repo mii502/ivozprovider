@@ -191,6 +191,49 @@ abstract class DdiAbstract
     protected $locution = null;
 
     /**
+     * @var float
+     * DID Marketplace: One-time setup fee
+     */
+    protected $setupPrice = 0;
+
+    /**
+     * @var float
+     * DID Marketplace: Monthly rental fee
+     */
+    protected $monthlyPrice = 0;
+
+    /**
+     * @var string
+     * comment: enum:available|reserved|assigned|suspended|disabled
+     * DID Marketplace: Inventory lifecycle status
+     */
+    protected $inventoryStatus = 'available';
+
+    /**
+     * @var ?\DateTimeInterface
+     * DID Marketplace: When DID was assigned to a company
+     */
+    protected $assignedAt = null;
+
+    /**
+     * @var ?\DateTimeInterface
+     * DID Marketplace: Next billing date for renewal
+     */
+    protected $nextRenewalAt = null;
+
+    /**
+     * @var ?CompanyInterface
+     * DID Marketplace: Company holding reservation (for postpaid orders)
+     */
+    protected $reservedForCompany = null;
+
+    /**
+     * @var ?\DateTimeInterface
+     * DID Marketplace: Reservation expiry timestamp
+     */
+    protected $reservedUntil = null;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -306,7 +349,14 @@ abstract class DdiAbstract
             ->setConditionalRoute($fkTransformer->transform($dto->getConditionalRoute()))
             ->setRetailAccount($fkTransformer->transform($dto->getRetailAccount()))
             ->setRoutingTag($fkTransformer->transform($dto->getRoutingTag()))
-            ->setLocution($fkTransformer->transform($dto->getLocution()));
+            ->setLocution($fkTransformer->transform($dto->getLocution()))
+            ->setSetupPrice($dto->getSetupPrice() ?? 0)
+            ->setMonthlyPrice($dto->getMonthlyPrice() ?? 0)
+            ->setInventoryStatus($dto->getInventoryStatus() ?? 'available')
+            ->setAssignedAt($dto->getAssignedAt())
+            ->setNextRenewalAt($dto->getNextRenewalAt())
+            ->setReservedForCompany($fkTransformer->transform($dto->getReservedForCompany()))
+            ->setReservedUntil($dto->getReservedUntil());
 
         $self->initChangelog();
 
@@ -360,7 +410,14 @@ abstract class DdiAbstract
             ->setConditionalRoute($fkTransformer->transform($dto->getConditionalRoute()))
             ->setRetailAccount($fkTransformer->transform($dto->getRetailAccount()))
             ->setRoutingTag($fkTransformer->transform($dto->getRoutingTag()))
-            ->setLocution($fkTransformer->transform($dto->getLocution()));
+            ->setLocution($fkTransformer->transform($dto->getLocution()))
+            ->setSetupPrice($dto->getSetupPrice() ?? 0)
+            ->setMonthlyPrice($dto->getMonthlyPrice() ?? 0)
+            ->setInventoryStatus($dto->getInventoryStatus() ?? 'available')
+            ->setAssignedAt($dto->getAssignedAt())
+            ->setNextRenewalAt($dto->getNextRenewalAt())
+            ->setReservedForCompany($fkTransformer->transform($dto->getReservedForCompany()))
+            ->setReservedUntil($dto->getReservedUntil());
 
         return $this;
     }
@@ -396,7 +453,14 @@ abstract class DdiAbstract
             ->setConditionalRoute(ConditionalRoute::entityToDto(self::getConditionalRoute(), $depth))
             ->setRetailAccount(RetailAccount::entityToDto(self::getRetailAccount(), $depth))
             ->setRoutingTag(RoutingTag::entityToDto(self::getRoutingTag(), $depth))
-            ->setLocution(Locution::entityToDto(self::getLocution(), $depth));
+            ->setLocution(Locution::entityToDto(self::getLocution(), $depth))
+            ->setSetupPrice(self::getSetupPrice())
+            ->setMonthlyPrice(self::getMonthlyPrice())
+            ->setInventoryStatus(self::getInventoryStatus())
+            ->setAssignedAt(self::getAssignedAt())
+            ->setNextRenewalAt(self::getNextRenewalAt())
+            ->setReservedForCompany(Company::entityToDto(self::getReservedForCompany(), $depth))
+            ->setReservedUntil(self::getReservedUntil());
     }
 
     /**
@@ -430,7 +494,14 @@ abstract class DdiAbstract
             'conditionalRouteId' => self::getConditionalRoute()?->getId(),
             'retailAccountId' => self::getRetailAccount()?->getId(),
             'routingTagId' => self::getRoutingTag()?->getId(),
-            'locutionId' => self::getLocution()?->getId()
+            'locutionId' => self::getLocution()?->getId(),
+            'setupPrice' => self::getSetupPrice(),
+            'monthlyPrice' => self::getMonthlyPrice(),
+            'inventoryStatus' => self::getInventoryStatus(),
+            'assignedAt' => self::getAssignedAt(),
+            'nextRenewalAt' => self::getNextRenewalAt(),
+            'reservedForCompanyId' => self::getReservedForCompany()?->getId(),
+            'reservedUntil' => self::getReservedUntil()
         ];
     }
 
@@ -805,5 +876,102 @@ abstract class DdiAbstract
     public function getLocution(): ?LocutionInterface
     {
         return $this->locution;
+    }
+
+    protected function setSetupPrice(float $setupPrice): static
+    {
+        $this->setupPrice = $setupPrice;
+
+        return $this;
+    }
+
+    public function getSetupPrice(): float
+    {
+        return $this->setupPrice;
+    }
+
+    protected function setMonthlyPrice(float $monthlyPrice): static
+    {
+        $this->monthlyPrice = $monthlyPrice;
+
+        return $this;
+    }
+
+    public function getMonthlyPrice(): float
+    {
+        return $this->monthlyPrice;
+    }
+
+    protected function setInventoryStatus(string $inventoryStatus): static
+    {
+        Assertion::maxLength($inventoryStatus, 20, 'inventoryStatus value "%s" is too long, it should have no more than %d characters, but has %d characters.');
+        Assertion::choice(
+            $inventoryStatus,
+            [
+                DdiInterface::INVENTORYSTATUS_AVAILABLE,
+                DdiInterface::INVENTORYSTATUS_RESERVED,
+                DdiInterface::INVENTORYSTATUS_ASSIGNED,
+                DdiInterface::INVENTORYSTATUS_SUSPENDED,
+                DdiInterface::INVENTORYSTATUS_DISABLED,
+            ],
+            'inventoryStatusvalue "%s" is not an element of the valid values: %s'
+        );
+
+        $this->inventoryStatus = $inventoryStatus;
+
+        return $this;
+    }
+
+    public function getInventoryStatus(): string
+    {
+        return $this->inventoryStatus;
+    }
+
+    protected function setAssignedAt(?\DateTimeInterface $assignedAt = null): static
+    {
+        $this->assignedAt = $assignedAt;
+
+        return $this;
+    }
+
+    public function getAssignedAt(): ?\DateTimeInterface
+    {
+        return $this->assignedAt;
+    }
+
+    protected function setNextRenewalAt(?\DateTimeInterface $nextRenewalAt = null): static
+    {
+        $this->nextRenewalAt = $nextRenewalAt;
+
+        return $this;
+    }
+
+    public function getNextRenewalAt(): ?\DateTimeInterface
+    {
+        return $this->nextRenewalAt;
+    }
+
+    protected function setReservedForCompany(?CompanyInterface $reservedForCompany = null): static
+    {
+        $this->reservedForCompany = $reservedForCompany;
+
+        return $this;
+    }
+
+    public function getReservedForCompany(): ?CompanyInterface
+    {
+        return $this->reservedForCompany;
+    }
+
+    protected function setReservedUntil(?\DateTimeInterface $reservedUntil = null): static
+    {
+        $this->reservedUntil = $reservedUntil;
+
+        return $this;
+    }
+
+    public function getReservedUntil(): ?\DateTimeInterface
+    {
+        return $this->reservedUntil;
     }
 }

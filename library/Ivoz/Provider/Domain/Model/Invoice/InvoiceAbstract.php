@@ -16,11 +16,13 @@ use Ivoz\Provider\Domain\Model\Brand\BrandInterface;
 use Ivoz\Provider\Domain\Model\Company\CompanyInterface;
 use Ivoz\Provider\Domain\Model\InvoiceNumberSequence\InvoiceNumberSequenceInterface;
 use Ivoz\Provider\Domain\Model\InvoiceScheduler\InvoiceSchedulerInterface;
+use Ivoz\Provider\Domain\Model\Ddi\DdiInterface;
 use Ivoz\Provider\Domain\Model\InvoiceTemplate\InvoiceTemplate;
 use Ivoz\Provider\Domain\Model\Brand\Brand;
 use Ivoz\Provider\Domain\Model\Company\Company;
 use Ivoz\Provider\Domain\Model\InvoiceNumberSequence\InvoiceNumberSequence;
 use Ivoz\Provider\Domain\Model\InvoiceScheduler\InvoiceScheduler;
+use Ivoz\Provider\Domain\Model\Ddi\Ddi;
 
 /**
 * InvoiceAbstract
@@ -100,6 +102,50 @@ abstract class InvoiceAbstract
      * @var ?InvoiceSchedulerInterface
      */
     protected $scheduler = null;
+
+    // WHMCS sync fields
+
+    /**
+     * @var ?int
+     */
+    protected $whmcsInvoiceId = null;
+
+    /**
+     * @var ?string
+     * comment: enum:not_applicable|pending|synced|failed
+     */
+    protected $syncStatus = 'not_applicable';
+
+    /**
+     * @var ?\DateTime
+     */
+    protected $whmcsSyncedAt = null;
+
+    /**
+     * @var ?\DateTime
+     */
+    protected $whmcsPaidAt = null;
+
+    /**
+     * @var ?string
+     */
+    protected $syncError = null;
+
+    /**
+     * @var int
+     */
+    protected $syncAttempts = 0;
+
+    /**
+     * @var string
+     * comment: enum:standard|did_purchase|did_renewal|balance_topup
+     */
+    protected $invoiceType = 'standard';
+
+    /**
+     * @var ?DdiInterface
+     */
+    protected $ddi = null;
 
     /**
      * Constructor
@@ -199,7 +245,16 @@ abstract class InvoiceAbstract
             ->setBrand($fkTransformer->transform($brand))
             ->setCompany($fkTransformer->transform($company))
             ->setNumberSequence($fkTransformer->transform($dto->getNumberSequence()))
-            ->setScheduler($fkTransformer->transform($dto->getScheduler()));
+            ->setScheduler($fkTransformer->transform($dto->getScheduler()))
+            // WHMCS sync fields
+            ->setWhmcsInvoiceId($dto->getWhmcsInvoiceId())
+            ->setSyncStatus($dto->getSyncStatus())
+            ->setWhmcsSyncedAt($dto->getWhmcsSyncedAt())
+            ->setWhmcsPaidAt($dto->getWhmcsPaidAt())
+            ->setSyncError($dto->getSyncError())
+            ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
+            ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
+            ->setDdi($fkTransformer->transform($dto->getDdi()));
 
         $self->initChangelog();
 
@@ -241,7 +296,16 @@ abstract class InvoiceAbstract
             ->setBrand($fkTransformer->transform($brand))
             ->setCompany($fkTransformer->transform($company))
             ->setNumberSequence($fkTransformer->transform($dto->getNumberSequence()))
-            ->setScheduler($fkTransformer->transform($dto->getScheduler()));
+            ->setScheduler($fkTransformer->transform($dto->getScheduler()))
+            // WHMCS sync fields
+            ->setWhmcsInvoiceId($dto->getWhmcsInvoiceId())
+            ->setSyncStatus($dto->getSyncStatus())
+            ->setWhmcsSyncedAt($dto->getWhmcsSyncedAt())
+            ->setWhmcsPaidAt($dto->getWhmcsPaidAt())
+            ->setSyncError($dto->getSyncError())
+            ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
+            ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
+            ->setDdi($fkTransformer->transform($dto->getDdi()));
 
         return $this;
     }
@@ -267,7 +331,16 @@ abstract class InvoiceAbstract
             ->setBrand(Brand::entityToDto(self::getBrand(), $depth))
             ->setCompany(Company::entityToDto(self::getCompany(), $depth))
             ->setNumberSequence(InvoiceNumberSequence::entityToDto(self::getNumberSequence(), $depth))
-            ->setScheduler(InvoiceScheduler::entityToDto(self::getScheduler(), $depth));
+            ->setScheduler(InvoiceScheduler::entityToDto(self::getScheduler(), $depth))
+            // WHMCS sync fields
+            ->setWhmcsInvoiceId(self::getWhmcsInvoiceId())
+            ->setSyncStatus(self::getSyncStatus())
+            ->setWhmcsSyncedAt(self::getWhmcsSyncedAt())
+            ->setWhmcsPaidAt(self::getWhmcsPaidAt())
+            ->setSyncError(self::getSyncError())
+            ->setSyncAttempts(self::getSyncAttempts())
+            ->setInvoiceType(self::getInvoiceType())
+            ->setDdi(Ddi::entityToDto(self::getDdi(), $depth));
     }
 
     /**
@@ -291,7 +364,16 @@ abstract class InvoiceAbstract
             'brandId' => self::getBrand()->getId(),
             'companyId' => self::getCompany()->getId(),
             'numberSequenceId' => self::getNumberSequence()?->getId(),
-            'schedulerId' => self::getScheduler()?->getId()
+            'schedulerId' => self::getScheduler()?->getId(),
+            // WHMCS sync fields
+            'whmcsInvoiceId' => self::getWhmcsInvoiceId(),
+            'syncStatus' => self::getSyncStatus(),
+            'whmcsSyncedAt' => self::getWhmcsSyncedAt(),
+            'whmcsPaidAt' => self::getWhmcsPaidAt(),
+            'syncError' => self::getSyncError(),
+            'syncAttempts' => self::getSyncAttempts(),
+            'invoiceType' => self::getInvoiceType(),
+            'ddiId' => self::getDdi()?->getId()
         ];
     }
 
@@ -525,5 +607,143 @@ abstract class InvoiceAbstract
     public function getScheduler(): ?InvoiceSchedulerInterface
     {
         return $this->scheduler;
+    }
+
+    // WHMCS sync field getters and setters
+
+    protected function setWhmcsInvoiceId(?int $whmcsInvoiceId = null): static
+    {
+        $this->whmcsInvoiceId = $whmcsInvoiceId;
+
+        return $this;
+    }
+
+    public function getWhmcsInvoiceId(): ?int
+    {
+        return $this->whmcsInvoiceId;
+    }
+
+    protected function setSyncStatus(?string $syncStatus = null): static
+    {
+        if (!is_null($syncStatus)) {
+            Assertion::choice(
+                $syncStatus,
+                [
+                    InvoiceInterface::SYNC_STATUS_NOT_APPLICABLE,
+                    InvoiceInterface::SYNC_STATUS_PENDING,
+                    InvoiceInterface::SYNC_STATUS_SYNCED,
+                    InvoiceInterface::SYNC_STATUS_FAILED,
+                ],
+                'syncStatus value "%s" is not an element of the valid values: %s'
+            );
+        }
+
+        $this->syncStatus = $syncStatus;
+
+        return $this;
+    }
+
+    public function getSyncStatus(): ?string
+    {
+        return $this->syncStatus;
+    }
+
+    protected function setWhmcsSyncedAt(string|\DateTimeInterface|null $whmcsSyncedAt = null): static
+    {
+        if (!is_null($whmcsSyncedAt)) {
+            /** @var ?\DateTime */
+            $whmcsSyncedAt = DateTimeHelper::createOrFix(
+                $whmcsSyncedAt,
+                null
+            );
+        }
+
+        $this->whmcsSyncedAt = $whmcsSyncedAt;
+
+        return $this;
+    }
+
+    public function getWhmcsSyncedAt(): ?\DateTime
+    {
+        return !is_null($this->whmcsSyncedAt) ? clone $this->whmcsSyncedAt : null;
+    }
+
+    protected function setWhmcsPaidAt(string|\DateTimeInterface|null $whmcsPaidAt = null): static
+    {
+        if (!is_null($whmcsPaidAt)) {
+            /** @var ?\DateTime */
+            $whmcsPaidAt = DateTimeHelper::createOrFix(
+                $whmcsPaidAt,
+                null
+            );
+        }
+
+        $this->whmcsPaidAt = $whmcsPaidAt;
+
+        return $this;
+    }
+
+    public function getWhmcsPaidAt(): ?\DateTime
+    {
+        return !is_null($this->whmcsPaidAt) ? clone $this->whmcsPaidAt : null;
+    }
+
+    protected function setSyncError(?string $syncError = null): static
+    {
+        $this->syncError = $syncError;
+
+        return $this;
+    }
+
+    public function getSyncError(): ?string
+    {
+        return $this->syncError;
+    }
+
+    protected function setSyncAttempts(int $syncAttempts): static
+    {
+        $this->syncAttempts = $syncAttempts;
+
+        return $this;
+    }
+
+    public function getSyncAttempts(): int
+    {
+        return $this->syncAttempts;
+    }
+
+    protected function setInvoiceType(string $invoiceType): static
+    {
+        Assertion::choice(
+            $invoiceType,
+            [
+                InvoiceInterface::INVOICE_TYPE_STANDARD,
+                InvoiceInterface::INVOICE_TYPE_DID_PURCHASE,
+                InvoiceInterface::INVOICE_TYPE_DID_RENEWAL,
+                InvoiceInterface::INVOICE_TYPE_BALANCE_TOPUP,
+            ],
+            'invoiceType value "%s" is not an element of the valid values: %s'
+        );
+
+        $this->invoiceType = $invoiceType;
+
+        return $this;
+    }
+
+    public function getInvoiceType(): string
+    {
+        return $this->invoiceType;
+    }
+
+    protected function setDdi(?DdiInterface $ddi = null): static
+    {
+        $this->ddi = $ddi;
+
+        return $this;
+    }
+
+    public function getDdi(): ?DdiInterface
+    {
+        return $this->ddi;
     }
 }

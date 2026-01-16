@@ -26,6 +26,7 @@ class InvoiceLifecycleServiceCollection implements LifecycleServiceCollectionInt
         "on_commit" =>
         [
             \Ivoz\Provider\Domain\Service\Invoice\SendGenerateOrder::class => 10,
+            \Ivoz\Provider\Domain\Service\Invoice\SyncToWhmcs::class => 200,
             \Ivoz\Provider\Domain\Service\Invoice\EmailSender::class => 300,
         ],
     ];

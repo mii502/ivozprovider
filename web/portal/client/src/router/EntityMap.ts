@@ -9,6 +9,7 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import RingVolumeIcon from '@mui/icons-material/RingVolume';
 import RoomPreferencesIcon from '@mui/icons-material/RoomPreferences';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import WalletIcon from '@mui/icons-material/Wallet';
 
 import entities from '../entities';
@@ -443,6 +444,15 @@ const getEntityMap = (): ExtendedRouteMap => {
         {
           entity: entities.Invoice,
           isAccessible: (aboutMe) => aboutMe.billingInfo,
+        },
+      ],
+    },
+    {
+      label: _('Marketplace'),
+      icon: StorefrontIcon,
+      children: [
+        {
+          entity: entities.AvailableDdi,
         },
       ],
     },

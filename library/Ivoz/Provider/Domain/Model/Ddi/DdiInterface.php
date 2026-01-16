@@ -67,6 +67,16 @@ interface DdiInterface extends LoggableEntityInterface
 
     public const TYPE_OUT = 'out';
 
+    public const INVENTORYSTATUS_AVAILABLE = 'available';
+
+    public const INVENTORYSTATUS_RESERVED = 'reserved';
+
+    public const INVENTORYSTATUS_ASSIGNED = 'assigned';
+
+    public const INVENTORYSTATUS_SUSPENDED = 'suspended';
+
+    public const INVENTORYSTATUS_DISABLED = 'disabled';
+
     /**
      * @codeCoverageIgnore
      * @return array<string, mixed>
@@ -176,6 +186,20 @@ interface DdiInterface extends LoggableEntityInterface
     public function getRoutingTag(): ?RoutingTagInterface;
 
     public function getLocution(): ?LocutionInterface;
+
+    public function getSetupPrice(): float;
+
+    public function getMonthlyPrice(): float;
+
+    public function getInventoryStatus(): string;
+
+    public function getAssignedAt(): ?\DateTimeInterface;
+
+    public function getNextRenewalAt(): ?\DateTimeInterface;
+
+    public function getReservedForCompany(): ?CompanyInterface;
+
+    public function getReservedUntil(): ?\DateTimeInterface;
 
     public function addRecording(RecordingInterface $recording): DdiInterface;
 

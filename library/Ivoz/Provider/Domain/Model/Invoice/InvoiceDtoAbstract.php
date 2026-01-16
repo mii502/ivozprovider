@@ -10,6 +10,7 @@ use Ivoz\Provider\Domain\Model\Company\CompanyDto;
 use Ivoz\Provider\Domain\Model\InvoiceNumberSequence\InvoiceNumberSequenceDto;
 use Ivoz\Provider\Domain\Model\InvoiceScheduler\InvoiceSchedulerDto;
 use Ivoz\Provider\Domain\Model\FixedCostsRelInvoice\FixedCostsRelInvoiceDto;
+use Ivoz\Provider\Domain\Model\Ddi\DdiDto;
 
 /**
 * InvoiceDtoAbstract
@@ -109,6 +110,48 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
      */
     private $relFixedCosts = null;
 
+    // WHMCS sync fields
+
+    /**
+     * @var int|null
+     */
+    private $whmcsInvoiceId = null;
+
+    /**
+     * @var string|null
+     */
+    private $syncStatus = 'not_applicable';
+
+    /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $whmcsSyncedAt = null;
+
+    /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $whmcsPaidAt = null;
+
+    /**
+     * @var string|null
+     */
+    private $syncError = null;
+
+    /**
+     * @var int
+     */
+    private $syncAttempts = 0;
+
+    /**
+     * @var string
+     */
+    private $invoiceType = 'standard';
+
+    /**
+     * @var DdiDto | null
+     */
+    private $ddi = null;
+
     public function __construct(?int $id = null)
     {
         $this->setId($id);
@@ -142,7 +185,16 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'brandId' => 'brand',
             'companyId' => 'company',
             'numberSequenceId' => 'numberSequence',
-            'schedulerId' => 'scheduler'
+            'schedulerId' => 'scheduler',
+            // WHMCS sync fields
+            'whmcsInvoiceId' => 'whmcsInvoiceId',
+            'syncStatus' => 'syncStatus',
+            'whmcsSyncedAt' => 'whmcsSyncedAt',
+            'whmcsPaidAt' => 'whmcsPaidAt',
+            'syncError' => 'syncError',
+            'syncAttempts' => 'syncAttempts',
+            'invoiceType' => 'invoiceType',
+            'ddiId' => 'ddi'
         ];
     }
 
@@ -171,7 +223,16 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'company' => $this->getCompany(),
             'numberSequence' => $this->getNumberSequence(),
             'scheduler' => $this->getScheduler(),
-            'relFixedCosts' => $this->getRelFixedCosts()
+            'relFixedCosts' => $this->getRelFixedCosts(),
+            // WHMCS sync fields
+            'whmcsInvoiceId' => $this->getWhmcsInvoiceId(),
+            'syncStatus' => $this->getSyncStatus(),
+            'whmcsSyncedAt' => $this->getWhmcsSyncedAt(),
+            'whmcsPaidAt' => $this->getWhmcsPaidAt(),
+            'syncError' => $this->getSyncError(),
+            'syncAttempts' => $this->getSyncAttempts(),
+            'invoiceType' => $this->getInvoiceType(),
+            'ddi' => $this->getDdi()
         ];
 
         if (!$hideSensitiveData) {
@@ -501,5 +562,121 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
     public function getRelFixedCosts(): ?array
     {
         return $this->relFixedCosts;
+    }
+
+    // WHMCS sync field getters and setters
+
+    public function setWhmcsInvoiceId(?int $whmcsInvoiceId): static
+    {
+        $this->whmcsInvoiceId = $whmcsInvoiceId;
+
+        return $this;
+    }
+
+    public function getWhmcsInvoiceId(): ?int
+    {
+        return $this->whmcsInvoiceId;
+    }
+
+    public function setSyncStatus(?string $syncStatus): static
+    {
+        $this->syncStatus = $syncStatus;
+
+        return $this;
+    }
+
+    public function getSyncStatus(): ?string
+    {
+        return $this->syncStatus;
+    }
+
+    public function setWhmcsSyncedAt(null|\DateTimeInterface|string $whmcsSyncedAt): static
+    {
+        $this->whmcsSyncedAt = $whmcsSyncedAt;
+
+        return $this;
+    }
+
+    public function getWhmcsSyncedAt(): \DateTimeInterface|string|null
+    {
+        return $this->whmcsSyncedAt;
+    }
+
+    public function setWhmcsPaidAt(null|\DateTimeInterface|string $whmcsPaidAt): static
+    {
+        $this->whmcsPaidAt = $whmcsPaidAt;
+
+        return $this;
+    }
+
+    public function getWhmcsPaidAt(): \DateTimeInterface|string|null
+    {
+        return $this->whmcsPaidAt;
+    }
+
+    public function setSyncError(?string $syncError): static
+    {
+        $this->syncError = $syncError;
+
+        return $this;
+    }
+
+    public function getSyncError(): ?string
+    {
+        return $this->syncError;
+    }
+
+    public function setSyncAttempts(?int $syncAttempts): static
+    {
+        $this->syncAttempts = $syncAttempts ?? 0;
+
+        return $this;
+    }
+
+    public function getSyncAttempts(): int
+    {
+        return $this->syncAttempts;
+    }
+
+    public function setInvoiceType(?string $invoiceType): static
+    {
+        $this->invoiceType = $invoiceType ?? 'standard';
+
+        return $this;
+    }
+
+    public function getInvoiceType(): string
+    {
+        return $this->invoiceType;
+    }
+
+    public function setDdi(?DdiDto $ddi): static
+    {
+        $this->ddi = $ddi;
+
+        return $this;
+    }
+
+    public function getDdi(): ?DdiDto
+    {
+        return $this->ddi;
+    }
+
+    public function setDdiId(?int $id): static
+    {
+        $value = !is_null($id)
+            ? new DdiDto($id)
+            : null;
+
+        return $this->setDdi($value);
+    }
+
+    public function getDdiId(): ?int
+    {
+        if ($dto = $this->getDdi()) {
+            return $dto->getId();
+        }
+
+        return null;
     }
 }

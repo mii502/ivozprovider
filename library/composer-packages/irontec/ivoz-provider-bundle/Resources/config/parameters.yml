@@ -27,3 +27,8 @@ parameters:
     redis_jobs_db: 2
     redis_timeout: 3600
     behat.feature_context.admin_repository: 'Ivoz\Provider\Domain\Model\Administrator\AdministratorRepository'
+    # WHMCS Integration
+    whmcs_api_url: '%env(WHMCS_API_URL)%'
+    whmcs_api_identifier: '%env(WHMCS_API_IDENTIFIER)%'
+    whmcs_api_secret: '%env(WHMCS_API_SECRET)%'
+    whmcs_webhook_secret: '%env(WHMCS_WEBHOOK_SECRET)%'

@@ -75,6 +75,17 @@ services:
         resource: '../src/Controller/Provider/*'
         tags: ['controller.service_arguments']
 
+    Controller\Webhook\:
+        resource: '../src/Controller/Webhook/*'
+        tags: ['controller.service_arguments']
+
+    # WHMCS Webhook Controller with explicit webhook secret and invoice paid handlers
+    Controller\Webhook\WhmcsPaidWebhookController:
+        arguments:
+            $webhookSecret: '%whmcs_webhook_secret%'
+            $handlers: !tagged_iterator ivoz.invoice_paid_handler
+        tags: ['controller.service_arguments']
+
 when@test:
     services:
         _defaults:

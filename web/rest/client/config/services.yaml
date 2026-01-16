@@ -75,6 +75,21 @@ services:
         resource: '../src/Controller/My/*'
         tags: ['controller.service_arguments']
 
+    Controller\BalanceTopUp\:
+        resource: '../src/Controller/BalanceTopUp/*'
+        tags: ['controller.service_arguments']
+
+    # Balance Top-Up Service
+    Ivoz\Provider\Domain\Service\BalanceTopUp\BalanceTopUpService:
+        autowire: true
+
+    ###############################
+    ## DID Marketplace Services
+    ###############################
+    Ivoz\Provider\Domain\Service\Ddi\DidInventoryService:
+        autowire: true
+        autoconfigure: true
+
     #######################################
     ## API
     #######################################

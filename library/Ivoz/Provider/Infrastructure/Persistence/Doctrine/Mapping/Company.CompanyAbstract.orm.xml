@@ -199,5 +199,7 @@
         <join-column name="locationId" referenced-column-name="id" on-delete="SET NULL"/>
       </join-columns>
     </many-to-one>
+    <field name="didRenewalAnchor" type="date" column="didRenewalAnchor" nullable="true"/>
+    <field name="whmcsClientId" type="integer" column="whmcsClientId" nullable="true"/>
   </mapped-superclass>
 </doctrine-mapping>

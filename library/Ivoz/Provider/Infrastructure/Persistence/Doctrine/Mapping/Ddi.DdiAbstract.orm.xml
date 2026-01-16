@@ -142,5 +142,29 @@
         <join-column name="locutionId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
       </join-columns>
     </many-to-one>
+    <field name="setupPrice" type="decimal" column="setupPrice" precision="10" scale="4" nullable="false">
+      <options>
+        <option name="default">0</option>
+      </options>
+    </field>
+    <field name="monthlyPrice" type="decimal" column="monthlyPrice" precision="10" scale="4" nullable="false">
+      <options>
+        <option name="default">0</option>
+      </options>
+    </field>
+    <field name="inventoryStatus" type="string" column="inventoryStatus" length="20" nullable="false">
+      <options>
+        <option name="comment">[enum:available|reserved|assigned|suspended|disabled]</option>
+        <option name="default">available</option>
+      </options>
+    </field>
+    <field name="assignedAt" type="datetime" column="assignedAt" nullable="true"/>
+    <field name="nextRenewalAt" type="date" column="nextRenewalAt" nullable="true"/>
+    <many-to-one field="reservedForCompany" target-entity="Ivoz\Provider\Domain\Model\Company\CompanyInterface" fetch="LAZY">
+      <join-columns>
+        <join-column name="reservedForCompanyId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
+      </join-columns>
+    </many-to-one>
+    <field name="reservedUntil" type="datetime" column="reservedUntil" nullable="true"/>
   </mapped-superclass>
 </doctrine-mapping>

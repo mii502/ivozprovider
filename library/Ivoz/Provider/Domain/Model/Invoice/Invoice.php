@@ -178,6 +178,19 @@ class Invoice extends InvoiceAbstract implements FileContainerInterface, Invoice
 
     public function mustCheckValidity(): bool
     {
+        // WHMCS-sync invoice types don't need standard validity check
+        // (they don't have a date range of calls to validate)
+        $invoiceType = $this->getInvoiceType();
+        $skipValidationTypes = [
+            self::INVOICE_TYPE_BALANCE_TOPUP,
+            self::INVOICE_TYPE_DID_PURCHASE,
+            self::INVOICE_TYPE_DID_RENEWAL,
+        ];
+
+        if (in_array($invoiceType, $skipValidationTypes, true)) {
+            return false;
+        }
+
         $scheduledInvoice = $this->getScheduler();
         $mustRunInvoicer = $this->mustRunInvoicer();
 
@@ -198,5 +211,137 @@ class Invoice extends InvoiceAbstract implements FileContainerInterface, Invoice
         }
 
         return parent::setStatusMsg($statusMsg);
+    }
+
+    // WHMCS sync business logic methods
+
+    /**
+     * Check if invoice was paid via Company.balance (silent billing)
+     */
+    public function isPaidViaBalance(): bool
+    {
+        return $this->getPaidVia() === self::PAID_VIA_BALANCE;
+    }
+
+    /**
+     * Check if invoice should be synced to WHMCS based on company billing method and invoice type
+     */
+    public function shouldSyncToWhmcs(): bool
+    {
+        // Balance-paid invoices skip WHMCS sync (silent billing)
+        if ($this->isPaidViaBalance()) {
+            return false;
+        }
+
+        $company = $this->getCompany();
+
+        // Not WHMCS-linked if no whmcsClientId
+        if (!method_exists($company, 'getWhmcsClientId') || !$company->getWhmcsClientId()) {
+            return false;
+        }
+
+        $invoiceType = $this->getInvoiceType();
+        $billingMethod = method_exists($company, 'getBillingMethod') ? $company->getBillingMethod() : 'postpaid';
+
+        // Prepaid/Pseudoprepaid companies: sync did_purchase, did_renewal, balance_topup
+        // Postpaid companies: sync standard (monthly from InvoiceScheduler)
+        $syncableTypes = match ($billingMethod) {
+            'prepaid', 'pseudoprepaid' => [
+                self::INVOICE_TYPE_DID_PURCHASE,
+                self::INVOICE_TYPE_DID_RENEWAL,
+                self::INVOICE_TYPE_BALANCE_TOPUP,
+            ],
+            'postpaid' => [
+                self::INVOICE_TYPE_STANDARD,
+            ],
+            default => [],
+        };
+
+        return in_array($invoiceType, $syncableTypes, true);
+    }
+
+    /**
+     * Check if invoice has been paid via WHMCS
+     */
+    public function isPaidViaWhmcs(): bool
+    {
+        return $this->getWhmcsPaidAt() !== null;
+    }
+
+    /**
+     * Mark invoice as synced to WHMCS
+     */
+    public function markAsSynced(int $whmcsInvoiceId): static
+    {
+        $this->setWhmcsInvoiceId($whmcsInvoiceId);
+        $this->setSyncStatus(self::SYNC_STATUS_SYNCED);
+        $this->setWhmcsSyncedAt(new \DateTime());
+        $this->setSyncError(null);
+
+        return $this;
+    }
+
+    /**
+     * Mark invoice as paid from WHMCS webhook
+     */
+    public function markAsPaid(): static
+    {
+        $this->setWhmcsPaidAt(new \DateTime());
+        $this->setPaidVia(self::PAID_VIA_WHMCS);
+
+        return $this;
+    }
+
+    /**
+     * Mark invoice as paid via Company.balance (silent billing)
+     * Sets paidVia='balance' and syncStatus='not_applicable'
+     */
+    public function markAsPaidViaBalance(): static
+    {
+        $this->setPaidVia(self::PAID_VIA_BALANCE);
+        $this->setSyncStatus(self::SYNC_STATUS_NOT_APPLICABLE);
+
+        return $this;
+    }
+
+    /**
+     * Mark sync as failed with error message
+     */
+    public function markSyncFailed(string $error): static
+    {
+        $this->setSyncStatus(self::SYNC_STATUS_FAILED);
+        $this->setSyncError($error);
+
+        return $this;
+    }
+
+    /**
+     * Increment sync attempts for retry logic
+     */
+    public function incrementSyncAttempts(): static
+    {
+        $this->setSyncAttempts($this->getSyncAttempts() + 1);
+
+        return $this;
+    }
+
+    /**
+     * Set sync status to pending for WHMCS sync
+     */
+    public function markAsPending(): static
+    {
+        $this->setSyncStatus(self::SYNC_STATUS_PENDING);
+
+        return $this;
+    }
+
+    /**
+     * Mark as not applicable for WHMCS sync
+     */
+    public function markAsNotApplicable(): static
+    {
+        $this->setSyncStatus(self::SYNC_STATUS_NOT_APPLICABLE);
+
+        return $this;
     }
 }

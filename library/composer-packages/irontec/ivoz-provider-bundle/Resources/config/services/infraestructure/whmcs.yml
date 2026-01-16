@@ -1,0 +1,65 @@
+# WHMCS Integration Services
+# Provides invoice synchronization between IvozProvider and WHMCS
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  # WHMCS API HTTP Client
+  Ivoz\Provider\Infrastructure\Api\Whmcs\WhmcsApiService:
+    arguments:
+      $httpClient: '@ivoz.api_platform.http.client'
+      $apiUrl: '%whmcs_api_url%'
+      $identifier: '%whmcs_api_identifier%'
+      $secret: '%whmcs_api_secret%'
+    public: true
+
+  # Invoice Sync Service
+  Ivoz\Provider\Domain\Service\Invoice\SyncInvoiceToWhmcs:
+    public: true
+
+  # Invoice Lifecycle Service - WHMCS Sync on Commit
+  # IMPORTANT: Must have domain.service tag to be picked up by DomainServiceCompiler
+  # (Explicit definition overrides autoload.yml, so tag must be specified here)
+  Ivoz\Provider\Domain\Service\Invoice\SyncToWhmcs:
+    tags:
+      - { name: 'domain.service' }
+
+  #######################################
+  ## Invoice Paid Handlers (Phase E)
+  ## Called by WhmcsPaidWebhookController after invoice payment webhook
+  #######################################
+
+  # Handler for balance_topup invoice type - increments Company.balance
+  Ivoz\Provider\Domain\Service\Invoice\Handler\BalanceTopUpHandler:
+    tags:
+      - { name: 'ivoz.invoice_paid_handler' }
+
+  # Handler for did_purchase invoice type - provisions the DID
+  Ivoz\Provider\Domain\Service\Invoice\Handler\DidPurchaseHandler:
+    tags:
+      - { name: 'ivoz.invoice_paid_handler' }
+
+  # Handler for did_renewal invoice type - advances renewal date
+  Ivoz\Provider\Domain\Service\Invoice\Handler\DidRenewalHandler:
+    tags:
+      - { name: 'ivoz.invoice_paid_handler' }
+
+  # Handler for standard invoice type - records payment (postpaid)
+  Ivoz\Provider\Domain\Service\Invoice\Handler\StandardInvoiceHandler:
+    tags:
+      - { name: 'ivoz.invoice_paid_handler' }
+
+when@test:
+  services:
+    _defaults:
+      autowire: true
+      autoconfigure: true
+      public: false
+
+    # Mock WHMCS API service for testing
+    Ivoz\Provider\Infrastructure\Api\Whmcs\WhmcsApiService:
+      class: Ivoz\Provider\Infrastructure\Api\Whmcs\FakeWhmcsApiService
+      public: true

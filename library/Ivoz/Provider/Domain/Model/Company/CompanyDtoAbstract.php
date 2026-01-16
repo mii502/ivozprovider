@@ -261,6 +261,17 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
     private $location = null;
 
     /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $didRenewalAnchor = null;
+
+    /**
+     * @var int|null
+     * WHMCS Integration: Links Company to WHMCS client ID
+     */
+    private $whmcsClientId = null;
+
+    /**
      * @var ExtensionDto[] | null
      */
     private $extensions = null;
@@ -390,7 +401,9 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'corporationId' => 'corporation',
             'applicationServerSetId' => 'applicationServerSet',
             'mediaRelaySetId' => 'mediaRelaySet',
-            'locationId' => 'location'
+            'locationId' => 'location',
+            'didRenewalAnchor' => 'didRenewalAnchor',
+            'whmcsClientId' => 'whmcsClientId'
         ];
     }
 
@@ -446,6 +459,8 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'applicationServerSet' => $this->getApplicationServerSet(),
             'mediaRelaySet' => $this->getMediaRelaySet(),
             'location' => $this->getLocation(),
+            'didRenewalAnchor' => $this->getDidRenewalAnchor(),
+            'whmcsClientId' => $this->getWhmcsClientId(),
             'extensions' => $this->getExtensions(),
             'ddis' => $this->getDdis(),
             'friends' => $this->getFriends(),
@@ -1347,6 +1362,30 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
         }
 
         return null;
+    }
+
+    public function setDidRenewalAnchor(\DateTimeInterface|string|null $didRenewalAnchor): static
+    {
+        $this->didRenewalAnchor = $didRenewalAnchor;
+
+        return $this;
+    }
+
+    public function getDidRenewalAnchor(): \DateTimeInterface|string|null
+    {
+        return $this->didRenewalAnchor;
+    }
+
+    public function setWhmcsClientId(?int $whmcsClientId): static
+    {
+        $this->whmcsClientId = $whmcsClientId;
+
+        return $this;
+    }
+
+    public function getWhmcsClientId(): ?int
+    {
+        return $this->whmcsClientId;
     }
 
     /**

@@ -112,6 +112,13 @@ abstract class BrandAbstract
     protected $maxDailyUsageNotificationTemplate = null;
 
     /**
+     * @var string
+     * comment: enum:per_did|consolidated
+     * DID Marketplace: Renewal mode for DIDs
+     */
+    protected $didRenewalMode = 'per_did';
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -245,7 +252,8 @@ abstract class BrandAbstract
             ->setFaxNotificationTemplate($fkTransformer->transform($dto->getFaxNotificationTemplate()))
             ->setInvoiceNotificationTemplate($fkTransformer->transform($dto->getInvoiceNotificationTemplate()))
             ->setCallCsvNotificationTemplate($fkTransformer->transform($dto->getCallCsvNotificationTemplate()))
-            ->setMaxDailyUsageNotificationTemplate($fkTransformer->transform($dto->getMaxDailyUsageNotificationTemplate()));
+            ->setMaxDailyUsageNotificationTemplate($fkTransformer->transform($dto->getMaxDailyUsageNotificationTemplate()))
+            ->setDidRenewalMode($dto->getDidRenewalMode() ?? 'per_did');
 
         $self->initChangelog();
 
@@ -317,7 +325,8 @@ abstract class BrandAbstract
             ->setFaxNotificationTemplate($fkTransformer->transform($dto->getFaxNotificationTemplate()))
             ->setInvoiceNotificationTemplate($fkTransformer->transform($dto->getInvoiceNotificationTemplate()))
             ->setCallCsvNotificationTemplate($fkTransformer->transform($dto->getCallCsvNotificationTemplate()))
-            ->setMaxDailyUsageNotificationTemplate($fkTransformer->transform($dto->getMaxDailyUsageNotificationTemplate()));
+            ->setMaxDailyUsageNotificationTemplate($fkTransformer->transform($dto->getMaxDailyUsageNotificationTemplate()))
+            ->setDidRenewalMode($dto->getDidRenewalMode() ?? 'per_did');
 
         return $this;
     }
@@ -351,7 +360,8 @@ abstract class BrandAbstract
             ->setFaxNotificationTemplate(NotificationTemplate::entityToDto(self::getFaxNotificationTemplate(), $depth))
             ->setInvoiceNotificationTemplate(NotificationTemplate::entityToDto(self::getInvoiceNotificationTemplate(), $depth))
             ->setCallCsvNotificationTemplate(NotificationTemplate::entityToDto(self::getCallCsvNotificationTemplate(), $depth))
-            ->setMaxDailyUsageNotificationTemplate(NotificationTemplate::entityToDto(self::getMaxDailyUsageNotificationTemplate(), $depth));
+            ->setMaxDailyUsageNotificationTemplate(NotificationTemplate::entityToDto(self::getMaxDailyUsageNotificationTemplate(), $depth))
+            ->setDidRenewalMode(self::getDidRenewalMode());
     }
 
     /**
@@ -383,7 +393,8 @@ abstract class BrandAbstract
             'faxNotificationTemplateId' => self::getFaxNotificationTemplate()?->getId(),
             'invoiceNotificationTemplateId' => self::getInvoiceNotificationTemplate()?->getId(),
             'callCsvNotificationTemplateId' => self::getCallCsvNotificationTemplate()?->getId(),
-            'maxDailyUsageNotificationTemplateId' => self::getMaxDailyUsageNotificationTemplate()?->getId()
+            'maxDailyUsageNotificationTemplateId' => self::getMaxDailyUsageNotificationTemplate()?->getId(),
+            'didRenewalMode' => self::getDidRenewalMode()
         ];
     }
 
@@ -597,5 +608,27 @@ abstract class BrandAbstract
     public function getMaxDailyUsageNotificationTemplate(): ?NotificationTemplateInterface
     {
         return $this->maxDailyUsageNotificationTemplate;
+    }
+
+    protected function setDidRenewalMode(string $didRenewalMode): static
+    {
+        Assertion::maxLength($didRenewalMode, 20, 'didRenewalMode value "%s" is too long, it should have no more than %d characters, but has %d characters.');
+        Assertion::choice(
+            $didRenewalMode,
+            [
+                BrandInterface::DIDRENEWALMODE_PER_DID,
+                BrandInterface::DIDRENEWALMODE_CONSOLIDATED,
+            ],
+            'didRenewalModevalue "%s" is not an element of the valid values: %s'
+        );
+
+        $this->didRenewalMode = $didRenewalMode;
+
+        return $this;
+    }
+
+    public function getDidRenewalMode(): string
+    {
+        return $this->didRenewalMode;
     }
 }

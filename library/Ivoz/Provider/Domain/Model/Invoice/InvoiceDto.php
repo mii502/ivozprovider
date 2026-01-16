@@ -46,6 +46,10 @@ class InvoiceDto extends InvoiceDtoAbstract
                 'companyId' => 'company',
                 'schedulerId' => 'scheduler',
                 'currency' => 'currency',
+                // WHMCS sync fields
+                'invoiceType' => 'invoiceType',
+                'syncStatus' => 'syncStatus',
+                'whmcsInvoiceId' => 'whmcsInvoiceId',
             ];
         } else {
             $response = parent::getPropertyMap(...func_get_args());

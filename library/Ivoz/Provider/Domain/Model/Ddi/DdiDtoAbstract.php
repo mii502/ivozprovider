@@ -171,6 +171,41 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
      */
     private $recordings = null;
 
+    /**
+     * @var float|null
+     */
+    private $setupPrice = 0;
+
+    /**
+     * @var float|null
+     */
+    private $monthlyPrice = 0;
+
+    /**
+     * @var string|null
+     */
+    private $inventoryStatus = 'available';
+
+    /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $assignedAt = null;
+
+    /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $nextRenewalAt = null;
+
+    /**
+     * @var CompanyDto | null
+     */
+    private $reservedForCompany = null;
+
+    /**
+     * @var \DateTimeInterface|string|null
+     */
+    private $reservedUntil = null;
+
     public function __construct(?int $id = null)
     {
         $this->setId($id);
@@ -212,7 +247,14 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
             'conditionalRouteId' => 'conditionalRoute',
             'retailAccountId' => 'retailAccount',
             'routingTagId' => 'routingTag',
-            'locutionId' => 'locution'
+            'locutionId' => 'locution',
+            'setupPrice' => 'setupPrice',
+            'monthlyPrice' => 'monthlyPrice',
+            'inventoryStatus' => 'inventoryStatus',
+            'assignedAt' => 'assignedAt',
+            'nextRenewalAt' => 'nextRenewalAt',
+            'reservedForCompanyId' => 'reservedForCompany',
+            'reservedUntil' => 'reservedUntil'
         ];
     }
 
@@ -249,7 +291,14 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
             'retailAccount' => $this->getRetailAccount(),
             'routingTag' => $this->getRoutingTag(),
             'locution' => $this->getLocution(),
-            'recordings' => $this->getRecordings()
+            'recordings' => $this->getRecordings(),
+            'setupPrice' => $this->getSetupPrice(),
+            'monthlyPrice' => $this->getMonthlyPrice(),
+            'inventoryStatus' => $this->getInventoryStatus(),
+            'assignedAt' => $this->getAssignedAt(),
+            'nextRenewalAt' => $this->getNextRenewalAt(),
+            'reservedForCompany' => $this->getReservedForCompany(),
+            'reservedUntil' => $this->getReservedUntil()
         ];
 
         if (!$hideSensitiveData) {
@@ -915,5 +964,107 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
     public function getRecordings(): ?array
     {
         return $this->recordings;
+    }
+
+    public function setSetupPrice(float $setupPrice): static
+    {
+        $this->setupPrice = $setupPrice;
+
+        return $this;
+    }
+
+    public function getSetupPrice(): ?float
+    {
+        return $this->setupPrice;
+    }
+
+    public function setMonthlyPrice(float $monthlyPrice): static
+    {
+        $this->monthlyPrice = $monthlyPrice;
+
+        return $this;
+    }
+
+    public function getMonthlyPrice(): ?float
+    {
+        return $this->monthlyPrice;
+    }
+
+    public function setInventoryStatus(string $inventoryStatus): static
+    {
+        $this->inventoryStatus = $inventoryStatus;
+
+        return $this;
+    }
+
+    public function getInventoryStatus(): ?string
+    {
+        return $this->inventoryStatus;
+    }
+
+    public function setAssignedAt(\DateTimeInterface|string|null $assignedAt): static
+    {
+        $this->assignedAt = $assignedAt;
+
+        return $this;
+    }
+
+    public function getAssignedAt(): \DateTimeInterface|string|null
+    {
+        return $this->assignedAt;
+    }
+
+    public function setNextRenewalAt(\DateTimeInterface|string|null $nextRenewalAt): static
+    {
+        $this->nextRenewalAt = $nextRenewalAt;
+
+        return $this;
+    }
+
+    public function getNextRenewalAt(): \DateTimeInterface|string|null
+    {
+        return $this->nextRenewalAt;
+    }
+
+    public function setReservedForCompany(?CompanyDto $reservedForCompany): static
+    {
+        $this->reservedForCompany = $reservedForCompany;
+
+        return $this;
+    }
+
+    public function getReservedForCompany(): ?CompanyDto
+    {
+        return $this->reservedForCompany;
+    }
+
+    public function setReservedForCompanyId(?int $id): static
+    {
+        $value = !is_null($id)
+            ? new CompanyDto($id)
+            : null;
+
+        return $this->setReservedForCompany($value);
+    }
+
+    public function getReservedForCompanyId(): ?int
+    {
+        if ($dto = $this->getReservedForCompany()) {
+            return $dto->getId();
+        }
+
+        return null;
+    }
+
+    public function setReservedUntil(\DateTimeInterface|string|null $reservedUntil): static
+    {
+        $this->reservedUntil = $reservedUntil;
+
+        return $this;
+    }
+
+    public function getReservedUntil(): \DateTimeInterface|string|null
+    {
+        return $this->reservedUntil;
     }
 }
