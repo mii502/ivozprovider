@@ -4,6 +4,7 @@ namespace Ivoz\Provider\Domain\Model\Administrator;
 
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\Persistence\ObjectRepository;
+use Ivoz\Provider\Domain\Model\Company\CompanyInterface;
 
 interface AdministratorRepository extends ObjectRepository, Selectable
 {
@@ -32,4 +33,12 @@ interface AdministratorRepository extends ObjectRepository, Selectable
      * @return null| AdministratorInterface
      */
     public function findClientAdminByUsername(string $username);
+
+    /**
+     * Find the first active administrator for a company
+     *
+     * @param CompanyInterface $company
+     * @return AdministratorInterface|null
+     */
+    public function findFirstActiveByCompany(CompanyInterface $company): ?AdministratorInterface;
 }

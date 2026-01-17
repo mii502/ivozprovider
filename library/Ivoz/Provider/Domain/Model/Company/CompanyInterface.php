@@ -306,6 +306,8 @@ interface CompanyInterface extends LoggableEntityInterface
 
     public function getWhmcsClientId(): ?int;
 
+    public function getEnabled(): bool;
+
     public function addExtension(ExtensionInterface $extension): CompanyInterface;
 
     public function removeExtension(ExtensionInterface $extension): CompanyInterface;

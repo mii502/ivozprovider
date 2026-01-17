@@ -215,4 +215,32 @@ class NotificationTemplateDoctrineRepository extends ServiceEntityRepository imp
 
         return $response;
     }
+
+    public function findSuspensionNotificationTemplateByCompany(
+        CompanyInterface $company
+    ): ?NotificationTemplateInterface {
+        $language = $company->getLanguage();
+
+        // First try to find a brand-specific suspension template
+        $brandTemplate = $this->findOneBy([
+            'brand' => $company->getBrand(),
+            'type' => NotificationTemplateInterface::TYPE_SUSPENSION
+        ]);
+
+        if (
+            $brandTemplate
+            && $brandTemplate->getContentsByLanguage($language)
+        ) {
+            return $brandTemplate;
+        }
+
+        // Fall back to generic suspension template
+        /** @var NotificationTemplateInterface|null $response */
+        $response = $this->findOneBy([
+            'brand' => null,
+            'type' => NotificationTemplateInterface::TYPE_SUSPENSION
+        ]);
+
+        return $response;
+    }
 }

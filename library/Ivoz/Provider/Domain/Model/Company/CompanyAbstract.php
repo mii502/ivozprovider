@@ -257,6 +257,13 @@ abstract class CompanyAbstract
     protected $whmcsClientId = null;
 
     /**
+     * @var bool
+     * Suspension: Company enabled status for WHMCS integration
+     * When false, Kamailio will block all calls for this company
+     */
+    protected $enabled = true;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -427,7 +434,8 @@ abstract class CompanyAbstract
             ->setMediaRelaySet($fkTransformer->transform($mediaRelaySet))
             ->setLocation($fkTransformer->transform($dto->getLocation()))
             ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
-            ->setWhmcsClientId($dto->getWhmcsClientId());
+            ->setWhmcsClientId($dto->getWhmcsClientId())
+            ->setEnabled($dto->getEnabled() ?? true);
 
         $self->initChangelog();
 
@@ -528,7 +536,8 @@ abstract class CompanyAbstract
             ->setMediaRelaySet($fkTransformer->transform($mediaRelaySet))
             ->setLocation($fkTransformer->transform($dto->getLocation()))
             ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
-            ->setWhmcsClientId($dto->getWhmcsClientId());
+            ->setWhmcsClientId($dto->getWhmcsClientId())
+            ->setEnabled($dto->getEnabled() ?? $this->enabled);
 
         return $this;
     }
@@ -583,7 +592,8 @@ abstract class CompanyAbstract
             ->setMediaRelaySet(MediaRelaySet::entityToDto(self::getMediaRelaySet(), $depth))
             ->setLocation(Location::entityToDto(self::getLocation(), $depth))
             ->setDidRenewalAnchor(self::getDidRenewalAnchor())
-            ->setWhmcsClientId(self::getWhmcsClientId());
+            ->setWhmcsClientId(self::getWhmcsClientId())
+            ->setEnabled(self::getEnabled());
     }
 
     /**
@@ -636,7 +646,8 @@ abstract class CompanyAbstract
             'mediaRelaySetId' => self::getMediaRelaySet()->getId(),
             'locationId' => self::getLocation()?->getId(),
             'didRenewalAnchor' => self::getDidRenewalAnchor(),
-            'whmcsClientId' => self::getWhmcsClientId()
+            'whmcsClientId' => self::getWhmcsClientId(),
+            'enabled' => self::getEnabled()
         ];
     }
 
@@ -1191,5 +1202,17 @@ abstract class CompanyAbstract
     public function getWhmcsClientId(): ?int
     {
         return $this->whmcsClientId;
+    }
+
+    protected function setEnabled(bool $enabled): static
+    {
+        $this->enabled = $enabled;
+
+        return $this;
+    }
+
+    public function getEnabled(): bool
+    {
+        return $this->enabled;
     }
 }

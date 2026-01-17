@@ -93,6 +93,12 @@ services:
             $didRenewalOverdueHandler: '@Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandlerInterface'
         tags: ['controller.service_arguments']
 
+    # WHMCS Suspension Webhook Controller - suspend/unsuspend companies
+    Controller\Webhook\WhmcsSuspensionWebhookController:
+        arguments:
+            $webhookSecret: '%whmcs_webhook_secret%'
+        tags: ['controller.service_arguments']
+
 when@test:
     services:
         _defaults:

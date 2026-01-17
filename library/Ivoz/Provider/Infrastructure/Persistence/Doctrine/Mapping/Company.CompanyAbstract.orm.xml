@@ -201,5 +201,11 @@
     </many-to-one>
     <field name="didRenewalAnchor" type="date" column="didRenewalAnchor" nullable="true"/>
     <field name="whmcsClientId" type="integer" column="whmcsClientId" nullable="true"/>
+    <field name="enabled" type="boolean" column="enabled" nullable="false">
+      <options>
+        <option name="default">1</option>
+        <option name="comment">Suspension status: false blocks all calls</option>
+      </options>
+    </field>
   </mapped-superclass>
 </doctrine-mapping>

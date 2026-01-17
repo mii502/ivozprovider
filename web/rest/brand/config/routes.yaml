@@ -275,3 +275,17 @@ post_whmcs_invoice_overdue_webhook:
   defaults:
     _controller: Controller\Webhook\WhmcsOverdueWebhookController
     _api_receive: false
+
+post_whmcs_suspend_webhook:
+  path: '/webhooks/whmcs-suspend'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Webhook\WhmcsSuspensionWebhookController::suspend
+    _api_receive: false
+
+post_whmcs_unsuspend_webhook:
+  path: '/webhooks/whmcs-unsuspend'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Webhook\WhmcsSuspensionWebhookController::unsuspend
+    _api_receive: false

@@ -272,6 +272,12 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
     private $whmcsClientId = null;
 
     /**
+     * @var bool|null
+     * Suspension: Company enabled status for WHMCS integration
+     */
+    private $enabled = true;
+
+    /**
      * @var ExtensionDto[] | null
      */
     private $extensions = null;
@@ -403,7 +409,8 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'mediaRelaySetId' => 'mediaRelaySet',
             'locationId' => 'location',
             'didRenewalAnchor' => 'didRenewalAnchor',
-            'whmcsClientId' => 'whmcsClientId'
+            'whmcsClientId' => 'whmcsClientId',
+            'enabled' => 'enabled'
         ];
     }
 
@@ -461,6 +468,7 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'location' => $this->getLocation(),
             'didRenewalAnchor' => $this->getDidRenewalAnchor(),
             'whmcsClientId' => $this->getWhmcsClientId(),
+            'enabled' => $this->getEnabled(),
             'extensions' => $this->getExtensions(),
             'ddis' => $this->getDdis(),
             'friends' => $this->getFriends(),
@@ -1386,6 +1394,18 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
     public function getWhmcsClientId(): ?int
     {
         return $this->whmcsClientId;
+    }
+
+    public function setEnabled(?bool $enabled): static
+    {
+        $this->enabled = $enabled;
+
+        return $this;
+    }
+
+    public function getEnabled(): ?bool
+    {
+        return $this->enabled;
     }
 
     /**

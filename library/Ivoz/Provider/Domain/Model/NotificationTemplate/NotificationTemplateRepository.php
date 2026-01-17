@@ -22,4 +22,6 @@ interface NotificationTemplateRepository extends ObjectRepository, Selectable
     public function findVoicemailTemplateByCompany(CompanyInterface $company, LanguageInterface $language): NotificationTemplateInterface;
 
     public function findTemplateByBalanceNotification(BalanceNotificationInterface $balanceNotification, LanguageInterface $language): NotificationTemplateInterface;
+
+    public function findSuspensionNotificationTemplateByCompany(CompanyInterface $company): ?NotificationTemplateInterface;
 }

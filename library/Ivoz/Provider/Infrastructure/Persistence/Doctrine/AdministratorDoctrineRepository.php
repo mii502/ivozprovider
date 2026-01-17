@@ -7,6 +7,7 @@ use Ivoz\Core\Infrastructure\Persistence\Doctrine\Model\Helper\CriteriaHelper;
 use Ivoz\Provider\Domain\Model\Administrator\Administrator;
 use Ivoz\Provider\Domain\Model\Administrator\AdministratorInterface;
 use Ivoz\Provider\Domain\Model\Administrator\AdministratorRepository;
+use Ivoz\Provider\Domain\Model\Company\CompanyInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -127,5 +128,22 @@ class AdministratorDoctrineRepository extends ServiceEntityRepository implements
         $query = $qb->getQuery();
 
         return $query->getOneOrNullResult();
+    }
+
+    /**
+     * Find the first active administrator for a company
+     *
+     * @param CompanyInterface $company
+     * @return AdministratorInterface|null
+     */
+    public function findFirstActiveByCompany(CompanyInterface $company): ?AdministratorInterface
+    {
+        /** @var AdministratorInterface|null $admin */
+        $admin = $this->findOneBy([
+            'company' => $company,
+            'active' => true
+        ]);
+
+        return $admin;
     }
 }
