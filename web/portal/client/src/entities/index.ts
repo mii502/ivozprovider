@@ -9,6 +9,7 @@ const modules = import.meta.glob(
     '!./*/Form.tsx',
     '!./*/View.tsx',
     '!./*/*Properties.tsx',
+    '!./*/ListDecorator.tsx',
   ],
   { eager: true }
 );

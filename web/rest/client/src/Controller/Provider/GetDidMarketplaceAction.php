@@ -94,14 +94,27 @@ class GetDidMarketplaceAction
             $result['items']
         );
 
-        // Calculate pagination
+        // Check Accept header - ivoz-ui expects plain array for application/json
+        // API Platform returns Hydra format only for application/ld+json
+        $acceptHeader = $request->headers->get('Accept', 'application/json');
+        $wantsHydra = str_contains($acceptHeader, 'application/ld+json');
+
+        if (!$wantsHydra) {
+            // Return plain array with pagination headers (like API Platform does)
+            $response = new JsonResponse($members);
+            $response->headers->set('X-Total-Count', (string) $result['total']);
+            $response->headers->set('X-Page', (string) $page);
+            $response->headers->set('X-Items-Per-Page', (string) $itemsPerPage);
+            return $response;
+        }
+
+        // Build Hydra response for ld+json requests
         $totalPages = (int) ceil($result['total'] / $itemsPerPage);
         $basePath = '/api/client/dids/marketplace';
         $queryParams = $request->query->all();
         unset($queryParams['_page']);
 
-        // Build Hydra response
-        $response = [
+        $hydraResponse = [
             '@context' => '/api/client/contexts/AvailableDdi',
             '@id' => $basePath,
             '@type' => 'hydra:Collection',
@@ -116,7 +129,7 @@ class GetDidMarketplaceAction
                 return $basePath . '?' . http_build_query($params);
             };
 
-            $response['hydra:view'] = [
+            $hydraResponse['hydra:view'] = [
                 '@id' => $buildUrl($page),
                 '@type' => 'hydra:PartialCollectionView',
                 'hydra:first' => $buildUrl(1),
@@ -124,15 +137,15 @@ class GetDidMarketplaceAction
             ];
 
             if ($page > 1) {
-                $response['hydra:view']['hydra:previous'] = $buildUrl($page - 1);
+                $hydraResponse['hydra:view']['hydra:previous'] = $buildUrl($page - 1);
             }
 
             if ($page < $totalPages) {
-                $response['hydra:view']['hydra:next'] = $buildUrl($page + 1);
+                $hydraResponse['hydra:view']['hydra:next'] = $buildUrl($page + 1);
             }
         }
 
-        return new JsonResponse($response);
+        return new JsonResponse($hydraResponse);
     }
 
     /**

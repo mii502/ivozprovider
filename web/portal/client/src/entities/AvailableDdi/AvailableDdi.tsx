@@ -9,6 +9,7 @@ import {
   AvailableDdiProperties,
   AvailableDdiPropertyList,
 } from './AvailableDdiProperties';
+import ListDecorator from './ListDecorator';
 
 const properties: AvailableDdiProperties = {
   id: {
@@ -75,11 +76,7 @@ const AvailableDdi: EntityInterface = {
     detail: true,
   },
   toStr: (row: AvailableDdiPropertyList<string>) => row.ddiE164 as string,
-  ListDecorator: async () => {
-    const module = await import('./ListDecorator');
-
-    return module.default;
-  },
+  ListDecorator,
   View: async () => {
     const module = await import('./View');
 
