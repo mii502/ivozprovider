@@ -34,4 +34,19 @@ interface DdiRepository extends ObjectRepository, Selectable
     public function countByCompanyAndNotCountry(int $companyId, int $countryId): int;
 
     public function countByBrand(int $brandId): int;
+
+    /**
+     * Find DIDs due for renewal grouped by company
+     *
+     * Returns DIDs where:
+     * - nextRenewalAt <= given date
+     * - Company.billingMethod is prepaid or pseudoprepaid
+     * - Company.whmcsClientId is set (linked to WHMCS)
+     * - inventoryStatus = 'assigned'
+     * - monthlyPrice > 0 (excludes free/BYON DIDs)
+     *
+     * @param \DateTimeInterface $date Date to check renewals against
+     * @return array<int, DdiInterface[]> Array of DDIs keyed by company ID
+     */
+    public function findDdisForRenewalGroupedByCompany(\DateTimeInterface $date): array;
 }

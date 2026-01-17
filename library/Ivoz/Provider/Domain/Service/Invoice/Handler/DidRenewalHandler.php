@@ -10,19 +10,17 @@ use Psr\Log\LoggerInterface;
 /**
  * Handler for did_renewal invoice type
  *
- * When a DID renewal invoice is paid, this handler:
+ * When a DID renewal invoice is paid (via WHMCS webhook), this handler:
  * 1. Verifies the DDI is linked to the invoice
- * 2. Advances the DDI.nextRenewalAt date by 1 month
- * 3. Ensures the DDI remains active
- *
- * Note: DDI renewal fields (nextRenewalAt) will be added by the
- * ivozprovider-did-renewal module. This handler is designed to work
- * with the current DDI entity and will be updated when those fields are available.
+ * 2. Validates the DDI belongs to the invoice company
+ * 3. Advances the DDI.nextRenewalAt date by 1 month
  *
  * Renewal invoices are created by DailyDidRenewalCommand which runs daily
- * to check for DDIs due for renewal.
+ * to check for DDIs due for renewal. DIDs with sufficient company balance
+ * are renewed silently; those without balance get WHMCS invoices.
  *
- * @see integration/modules/ivozprovider-did-renewal for the renewal cron and service
+ * @see DailyDidRenewalCommand for the cron job that creates renewal invoices
+ * @see DidRenewalService for the balance-first renewal logic
  */
 class DidRenewalHandler implements InvoicePaidHandlerInterface
 {
@@ -122,43 +120,42 @@ class DidRenewalHandler implements InvoicePaidHandlerInterface
     /**
      * Advance the DDI renewal date by 1 month
      *
-     * Current implementation: Logs renewal (nextRenewalAt field not yet available)
-     *
-     * When ivozprovider-did-renewal adds the nextRenewalAt field, this will:
-     * - Get current DDI.nextRenewalAt
-     * - Add 1 month to the date
-     * - Update DDI.nextRenewalAt with new date
+     * Called when a DID renewal invoice is paid via WHMCS webhook.
+     * Gets the current nextRenewalAt date and advances it by 1 month.
      *
      * @param DdiInterface $ddi
-     * @return array Result with renewal date information
+     * @return array Result with previous and new renewal dates
      */
     private function advanceRenewalDate(DdiInterface $ddi): array
     {
-        // TODO: When ivozprovider-did-renewal adds nextRenewalAt field:
-        //
-        // $currentRenewalAt = $ddi->getNextRenewalAt();
-        // if (!$currentRenewalAt) {
-        //     // If no renewal date set, use current date
-        //     $currentRenewalAt = new \DateTime();
-        // }
-        //
-        // $newRenewalAt = (clone $currentRenewalAt)->modify('+1 month');
-        // $ddi->setNextRenewalAt($newRenewalAt);
-        //
-        // return [
-        //     'previous_renewal_at' => $currentRenewalAt->format('c'),
-        //     'next_renewal_at' => $newRenewalAt->format('c'),
-        // ];
+        $currentRenewalAt = $ddi->getNextRenewalAt();
+        if (!$currentRenewalAt) {
+            // If no renewal date set, use current date as base
+            $currentRenewalAt = new \DateTime();
+        }
 
-        // For now, just log that renewal was processed
-        // The DDI remains active as long as invoices are paid
-        $this->logger->debug('DID renewal handler: Renewal date advancement pending (field not yet available)', [
+        // Convert to DateTime if needed (Rule 10: DTO setters expect DateTime)
+        if ($currentRenewalAt instanceof \DateTimeImmutable) {
+            $currentRenewalAt = \DateTime::createFromInterface($currentRenewalAt);
+        }
+
+        $newRenewalAt = (clone $currentRenewalAt)->modify('+1 month');
+
+        // Use DTO for consistency with IvozProvider patterns
+        $ddiDto = $ddi->toDto();
+        $ddiDto->setNextRenewalAt($newRenewalAt);
+        $this->entityTools->persistDto($ddiDto, $ddi, false); // Don't flush - caller will persist
+
+        $this->logger->debug('DID renewal handler: nextRenewalAt advanced', [
             'ddi_id' => $ddi->getId(),
             'ddi_number' => $ddi->getDdie164(),
+            'previous_renewal_at' => $currentRenewalAt->format('Y-m-d'),
+            'next_renewal_at' => $newRenewalAt->format('Y-m-d'),
         ]);
 
         return [
-            'note' => 'DDI renewal recorded - nextRenewalAt field will be updated when available',
+            'previous_renewal_at' => $currentRenewalAt->format('c'),
+            'next_renewal_at' => $newRenewalAt->format('c'),
         ];
     }
 }

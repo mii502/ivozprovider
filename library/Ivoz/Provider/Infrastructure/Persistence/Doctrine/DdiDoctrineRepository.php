@@ -106,4 +106,59 @@ class DdiDoctrineRepository extends ServiceEntityRepository implements DdiReposi
 
         return $result['count'];
     }
+
+    /**
+     * Find DIDs due for renewal grouped by company
+     *
+     * @param \DateTimeInterface $date Date to check renewals against
+     * @return array<int, DdiInterface[]> Array of DDIs keyed by company ID
+     */
+    public function findDdisForRenewalGroupedByCompany(\DateTimeInterface $date): array
+    {
+        $qb = $this->createQueryBuilder('self');
+        $expression = $qb->expr();
+
+        $qb
+            ->select('self')
+            ->join('self.company', 'c')
+            ->where(
+                $expression->lte('self.nextRenewalAt', ':date')
+            )
+            ->andWhere(
+                $expression->in('c.billingMethod', ':prepaidMethods')
+            )
+            ->andWhere(
+                $expression->isNotNull('c.whmcsClientId')
+            )
+            ->andWhere(
+                $expression->eq('self.inventoryStatus', ':assigned')
+            )
+            ->andWhere(
+                $expression->gt('self.monthlyPrice', 0)
+            )
+            ->setParameter('date', $date)
+            ->setParameter('prepaidMethods', ['prepaid', 'pseudoprepaid'])
+            ->setParameter('assigned', DdiInterface::INVENTORYSTATUS_ASSIGNED)
+            ->orderBy('c.id', 'ASC')
+            ->addOrderBy('self.id', 'ASC');
+
+        /** @var DdiInterface[] $ddis */
+        $ddis = $qb->getQuery()->getResult();
+
+        // Group DDIs by company ID
+        $grouped = [];
+        foreach ($ddis as $ddi) {
+            $company = $ddi->getCompany();
+            if ($company === null) {
+                continue;
+            }
+            $companyId = $company->getId();
+            if (!isset($grouped[$companyId])) {
+                $grouped[$companyId] = [];
+            }
+            $grouped[$companyId][] = $ddi;
+        }
+
+        return $grouped;
+    }
 }

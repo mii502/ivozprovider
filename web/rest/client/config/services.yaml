@@ -89,6 +89,38 @@ services:
     Ivoz\Provider\Domain\Service\Ddi\DidInventoryService:
         autowire: true
         autoconfigure: true
+        public: true
+
+    ###############################
+    ## DID Purchase Services
+    ###############################
+    Ivoz\Provider\Domain\Service\Ddi\FirstPeriodCalculator:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Company\SyncBalances:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\BalanceMovement\CreateByCompany:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Ddi\DidPurchaseService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Ddi\DidPurchaseServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\Ddi\DidPurchaseService
+        public: true
+
+    Controller\DidPurchase\:
+        resource: '../src/Controller/DidPurchase/*'
+        tags: ['controller.service_arguments']
 
     #######################################
     ## API

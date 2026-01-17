@@ -52,6 +52,47 @@ services:
     tags:
       - { name: 'ivoz.invoice_paid_handler' }
 
+  #######################################
+  ## DID Renewal Services
+  ## Used by daily cron job for DID renewals
+  #######################################
+
+  # DID Renewal Service - Handles monthly DID renewal with balance billing
+  Ivoz\Provider\Domain\Service\Ddi\DidRenewalService:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  Ivoz\Provider\Domain\Service\Ddi\DidRenewalServiceInterface:
+    alias: Ivoz\Provider\Domain\Service\Ddi\DidRenewalService
+    public: true
+
+  #######################################
+  ## Console Commands
+  #######################################
+
+  # Daily DID Renewal Command - Cron job for processing DID renewals
+  Ivoz\Provider\Application\Command\DailyDidRenewalCommand:
+    autowire: true
+    autoconfigure: true
+    tags:
+      - { name: 'console.command' }
+
+  #######################################
+  ## DID Renewal Overdue Handler
+  ## Releases DIDs back to inventory on WHMCS overdue webhook
+  #######################################
+
+  # DID Renewal Overdue Handler - Releases DIDs on non-payment
+  Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandler:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandlerInterface:
+    alias: Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandler
+    public: true
+
 when@test:
   services:
     _defaults:

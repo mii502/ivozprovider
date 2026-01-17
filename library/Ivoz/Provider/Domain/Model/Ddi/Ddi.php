@@ -52,8 +52,11 @@ class Ddi extends DdiAbstract implements DdiInterface
     {
         $changedClient = $this->hasChanged('companyId');
         $initialClient = $this->getInitialValue('companyId');
+        $newClient = $this->getCompany();
 
-        if ($changedClient && $initialClient !== null) {
+        // Allow: initial assignment (null → Company) and release (Company → null)
+        // Forbid: transfer between companies (Company A → Company B)
+        if ($changedClient && $initialClient !== null && $newClient !== null) {
             throw new \DomainException(
                 'Forbidden ddi client update',
                 403

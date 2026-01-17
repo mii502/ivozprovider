@@ -296,3 +296,31 @@ get_dids_marketplace_item:
     _api_receive: false
   requirements:
     id: '\d+'
+
+###############################
+## DID Purchase Routes
+###############################
+
+# Preview DID purchase costs (balance check)
+post_dids_purchase_preview:
+  path: '/dids/purchase/preview'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidPurchase\PurchasePreviewAction
+    _api_receive: false
+
+# Execute DID purchase
+post_dids_purchase:
+  path: '/dids/purchase'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidPurchase\PurchaseAction
+    _api_receive: false
+
+# Get customer's purchased DIDs
+get_my_dids:
+  path: '/dids/my-dids'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\DidPurchase\GetMyDidsAction
+    _api_receive: false

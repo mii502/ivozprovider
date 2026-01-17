@@ -268,3 +268,10 @@ post_whmcs_invoice_paid_webhook:
   defaults:
     _controller: Controller\Webhook\WhmcsPaidWebhookController
     _api_receive: false
+
+post_whmcs_invoice_overdue_webhook:
+  path: '/webhooks/whmcs-overdue'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Webhook\WhmcsOverdueWebhookController
+    _api_receive: false

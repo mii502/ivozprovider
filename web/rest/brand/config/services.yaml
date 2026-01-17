@@ -86,6 +86,13 @@ services:
             $handlers: !tagged_iterator ivoz.invoice_paid_handler
         tags: ['controller.service_arguments']
 
+    # WHMCS Overdue Webhook Controller - releases DIDs on non-payment
+    Controller\Webhook\WhmcsOverdueWebhookController:
+        arguments:
+            $webhookSecret: '%whmcs_webhook_secret%'
+            $didRenewalOverdueHandler: '@Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandlerInterface'
+        tags: ['controller.service_arguments']
+
 when@test:
     services:
         _defaults:

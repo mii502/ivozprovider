@@ -58,6 +58,11 @@ security:
             stateless: true
             anonymous: true
 
+        whmcs_webhooks:
+            pattern:  ^/webhooks/whmcs-.*
+            stateless: true
+            anonymous: true
+
         api:
             pattern:   ^/.+
             stateless: true
@@ -82,5 +87,6 @@ security:
         - { path: ^/admin_login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/token/refresh, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/token/exchange, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/webhooks/whmcs-.*, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/.+, roles: ROLE_USER }
         - { path: ^/, roles: IS_AUTHENTICATED_ANONYMOUSLY }
