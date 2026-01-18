@@ -324,3 +324,33 @@ get_my_dids:
   defaults:
     _controller: Controller\DidPurchase\GetMyDidsAction
     _api_receive: false
+
+###############################
+## DID Order Routes (Postpaid)
+###############################
+
+# Create a DID order (postpaid customers)
+post_did_order:
+  path: '/did-orders'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidOrder\CreateOrderAction
+    _api_receive: false
+
+# List customer's DID orders
+get_did_orders:
+  path: '/did-orders'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\DidOrder\GetOrdersAction
+    _api_receive: false
+
+# Get single order details
+get_did_order:
+  path: '/did-orders/{id}'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\DidOrder\GetOrderAction
+    _api_receive: false
+  requirements:
+    id: '\d+'

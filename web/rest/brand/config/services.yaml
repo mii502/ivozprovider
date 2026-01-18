@@ -99,6 +99,39 @@ services:
             $webhookSecret: '%whmcs_webhook_secret%'
         tags: ['controller.service_arguments']
 
+    ###############################
+    ## DID Order Services
+    ###############################
+    Controller\DidOrder\:
+        resource: '../src/Controller/DidOrder/*'
+        tags: ['controller.service_arguments']
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderApprovalService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderApprovalServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\DidOrder\DidOrderApprovalService
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSender:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSenderInterface:
+        alias: Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSender
+        public: true
+
+    ###############################
+    ## DID Reservation Cleanup Command
+    ###############################
+    Ivoz\Provider\Application\Command\DidReservationCleanupCommand:
+        autowire: true
+        autoconfigure: true
+        tags: ['console.command']
+
 when@test:
     services:
         _defaults:

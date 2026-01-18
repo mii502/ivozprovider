@@ -289,3 +289,43 @@ post_whmcs_unsuspend_webhook:
   defaults:
     _controller: Controller\Webhook\WhmcsSuspensionWebhookController::unsuspend
     _api_receive: false
+
+###############################
+## DID Order Routes (Admin)
+###############################
+
+# List pending DID orders for brand
+get_did_orders_pending:
+  path: '/did-orders/pending'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\DidOrder\GetPendingOrdersAction
+    _api_receive: false
+
+# List all DID orders for brand
+get_did_orders:
+  path: '/did-orders'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\DidOrder\GetAllOrdersAction
+    _api_receive: false
+
+# Approve a DID order
+post_did_order_approve:
+  path: '/did-orders/{id}/approve'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidOrder\ApproveOrderAction
+    _api_receive: false
+  requirements:
+    id: '\d+'
+
+# Reject a DID order
+post_did_order_reject:
+  path: '/did-orders/{id}/reject'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidOrder\RejectOrderAction
+    _api_receive: false
+  requirements:
+    id: '\d+'

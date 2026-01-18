@@ -122,6 +122,31 @@ services:
         resource: '../src/Controller/DidPurchase/*'
         tags: ['controller.service_arguments']
 
+    ###############################
+    ## DID Order Services
+    ###############################
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\DidOrder\DidOrderService
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSender:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSenderInterface:
+        alias: Ivoz\Provider\Domain\Service\DidOrder\DidOrderEmailSender
+        public: true
+
+    Controller\DidOrder\:
+        resource: '../src/Controller/DidOrder/*'
+        tags: ['controller.service_arguments']
+
     #######################################
     ## API
     #######################################
