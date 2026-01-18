@@ -84,10 +84,13 @@ class GetDidMarketplaceItemAction
     private function transformDdi(DdiInterface $ddi): array
     {
         $country = $ddi->getCountry();
-        $countryName = null;
-        if ($country) {
-            $name = $country->getName();
-            $countryName = is_array($name) ? ($name['en'] ?? reset($name)) : (string) $name;
+        $countryName = 'Unknown';
+        if ($country !== null) {
+            $nameObj = $country->getName();
+            if ($nameObj !== null) {
+                // Name is a multilingual object with getEn(), getEs(), etc. methods
+                $countryName = $nameObj->getEn() ?? 'Unknown';
+            }
         }
 
         return [

@@ -59,7 +59,35 @@ const ListDecorator: ListDecoratorType = (props) => {
     );
   }
 
-  // Default: return null to use default rendering
+  // Country name - display as text
+  if (field === 'countryName') {
+    return (
+      <Typography component="span">
+        {row.countryName || row.country || '-'}
+      </Typography>
+    );
+  }
+
+  // DID type with friendly labels
+  if (field === 'ddiType') {
+    const typeLabels: Record<string, string> = {
+      inout: 'Inbound & Outbound',
+      out: 'Outbound only',
+      virtual: 'Virtual',
+    };
+    return (
+      <Typography component="span">
+        {typeLabels[row.ddiType] || row.ddiType || '-'}
+      </Typography>
+    );
+  }
+
+  // Default: return the value as-is for any unhandled field
+  // This ensures fields render even without explicit handling
+  if (row[field] !== undefined && row[field] !== null) {
+    return <Typography component="span">{String(row[field])}</Typography>;
+  }
+
   return null;
 };
 

@@ -453,9 +453,27 @@ const getEntityMap = (): ExtendedRouteMap => {
       children: [
         {
           entity: entities.AvailableDdi,
+          // Override ACLs for custom endpoint not in API schema
+          aclOverride: () => ({
+            iden: 'AvailableDdis',
+            create: false,
+            read: true,
+            detail: true,
+            update: false,
+            delete: false,
+          }),
         },
         {
           entity: entities.MyDids,
+          // Override ACLs for custom endpoint not in API schema
+          aclOverride: () => ({
+            iden: 'MyDids',
+            create: false,
+            read: true,
+            detail: true,
+            update: false,
+            delete: false,
+          }),
         },
         {
           entity: entities.DidOrder,
