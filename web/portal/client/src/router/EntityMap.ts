@@ -457,6 +457,9 @@ const getEntityMap = (): ExtendedRouteMap => {
         {
           entity: entities.MyDids,
         },
+        {
+          entity: entities.DidOrder,
+        },
       ],
     },
     {

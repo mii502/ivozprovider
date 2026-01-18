@@ -9,6 +9,7 @@ import CallSplitIcon from '@mui/icons-material/CallSplit';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import RecentActorsIcon from '@mui/icons-material/RecentActors';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import RingVolumeIcon from '@mui/icons-material/RingVolume';
 import RoomPreferencesIcon from '@mui/icons-material/RoomPreferences';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -206,6 +207,18 @@ const getEntityMap = (): ExtendedRouteMap => {
               entity: entities.WebPortal,
               filterBy: 'company',
             },
+          ],
+        },
+      ],
+    },
+    {
+      label: _('DID Orders'),
+      icon: ReceiptLongIcon,
+      children: [
+        {
+          entity: entities.DidOrder,
+          children: [
+            ...Object.values(entities.DidOrder.customActions),
           ],
         },
       ],
