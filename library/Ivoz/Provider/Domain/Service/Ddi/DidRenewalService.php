@@ -28,6 +28,10 @@ use Psr\Log\LoggerInterface;
  * Implements Balance-First renewal strategy:
  * 1. If company has sufficient balance → silent renewal with balance deduction
  * 2. If insufficient balance → create unpaid invoice for WHMCS sync
+ *
+ * Renewal modes:
+ * - per_did: Each DID advances independently by 1 month
+ * - consolidated: All DIDs advance to anchor + 1 month
  */
 class DidRenewalService implements DidRenewalServiceInterface
 {
@@ -57,12 +61,17 @@ class DidRenewalService implements DidRenewalServiceInterface
         $totalCost = $this->calculateRenewalCost($ddis);
         $ddiCount = count($ddis);
 
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand->getDidRenewalMode();
+
         $this->logger->info(sprintf(
-            'DID renewal from balance: Company #%d (%s), %d DDIs, total: %.2f',
+            'DID renewal from balance: Company #%d (%s), %d DDIs, total: %.2f [mode=%s]',
             $company->getId(),
             $company->getName(),
             $ddiCount,
-            $totalCost
+            $totalCost,
+            $renewalMode
         ));
 
         // Step 1: Deduct balance
@@ -78,19 +87,18 @@ class DidRenewalService implements DidRenewalServiceInterface
             );
         }
 
-        // Step 2: Create paid invoice
-        $invoice = $this->createInvoice($company, $ddis, $totalCost, true);
+        // Step 2: Create paid invoice with mode info
+        $invoice = $this->createInvoice($company, $ddis, $totalCost, true, $renewalMode);
 
         // Step 3: Advance renewal dates for all DDIs
-        foreach ($ddis as $ddi) {
-            $this->advanceRenewalDate($ddi);
-        }
+        $this->advanceRenewalDates($company, $ddis, $renewalMode);
 
         $this->logger->info(sprintf(
-            'DID renewal successful: Company #%d, Invoice #%s, %d DDIs renewed',
+            'DID renewal successful: Company #%d, Invoice #%s, %d DDIs renewed [mode=%s]',
             $company->getId(),
             $invoice->getNumber(),
-            $ddiCount
+            $ddiCount,
+            $renewalMode
         ));
 
         return $invoice;
@@ -104,21 +112,27 @@ class DidRenewalService implements DidRenewalServiceInterface
         $totalCost = $this->calculateRenewalCost($ddis);
         $ddiCount = count($ddis);
 
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand->getDidRenewalMode();
+
         $this->logger->info(sprintf(
-            'DID renewal via WHMCS: Company #%d (%s), %d DDIs, total: %.2f',
+            'DID renewal via WHMCS: Company #%d (%s), %d DDIs, total: %.2f [mode=%s]',
             $company->getId(),
             $company->getName(),
             $ddiCount,
-            $totalCost
+            $totalCost,
+            $renewalMode
         ));
 
         // Create unpaid invoice - InvoiceWhmcsSyncObserver will sync to WHMCS
-        $invoice = $this->createInvoice($company, $ddis, $totalCost, false);
+        $invoice = $this->createInvoice($company, $ddis, $totalCost, false, $renewalMode);
 
         $this->logger->info(sprintf(
-            'DID renewal invoice created: Company #%d, Invoice #%s (pending WHMCS sync)',
+            'DID renewal invoice created: Company #%d, Invoice #%s (pending WHMCS sync) [mode=%s]',
             $company->getId(),
-            $invoice->getNumber()
+            $invoice->getNumber(),
+            $renewalMode
         ));
 
         return $invoice;
@@ -201,13 +215,15 @@ class DidRenewalService implements DidRenewalServiceInterface
      * @param DdiInterface[] $ddis
      * @param float $totalCost
      * @param bool $paidViaBalance Whether this is a balance payment (true) or WHMCS invoice (false)
+     * @param string $renewalMode The renewal mode (per_did or consolidated)
      * @return InvoiceInterface
      */
     private function createInvoice(
         CompanyInterface $company,
         array $ddis,
         float $totalCost,
-        bool $paidViaBalance
+        bool $paidViaBalance,
+        string $renewalMode = FirstPeriodCalculator::MODE_PER_DID
     ): InvoiceInterface {
         $now = new \DateTime();
 
@@ -232,7 +248,7 @@ class DidRenewalService implements DidRenewalServiceInterface
             ->setTaxRate(0.0) // No tax for DID renewals (handled separately if needed)
             ->setTotalWithTax($totalCost)
             ->setStatus(InvoiceInterface::STATUS_CREATED)
-            ->setStatusMsg($this->buildInvoiceStatusMessage($ddis))
+            ->setStatusMsg($this->buildInvoiceStatusMessage($ddis, $renewalMode))
             ->setBrandId($company->getBrand()->getId())
             ->setCompanyId($company->getId())
             ->setInvoiceType(InvoiceInterface::INVOICE_TYPE_DID_RENEWAL);
@@ -269,9 +285,10 @@ class DidRenewalService implements DidRenewalServiceInterface
      * Build status message listing renewed DDIs
      *
      * @param DdiInterface[] $ddis
+     * @param string $renewalMode
      * @return string
      */
-    private function buildInvoiceStatusMessage(array $ddis): string
+    private function buildInvoiceStatusMessage(array $ddis, string $renewalMode = FirstPeriodCalculator::MODE_PER_DID): string
     {
         $ddiNumbers = [];
         foreach ($ddis as $ddi) {
@@ -279,28 +296,51 @@ class DidRenewalService implements DidRenewalServiceInterface
         }
 
         $count = count($ddiNumbers);
+        $modeLabel = $renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED ? '[consolidated]' : '[per_did]';
+
         if ($count === 1) {
-            return sprintf('DID renewal: %s', $ddiNumbers[0]);
+            return sprintf('DID renewal %s: %s', $modeLabel, $ddiNumbers[0]);
         }
 
         // For multiple DDIs, show first few and count
         if ($count <= 3) {
-            return sprintf('DID renewal: %s', implode(', ', $ddiNumbers));
+            return sprintf('DID renewal %s: %s', $modeLabel, implode(', ', $ddiNumbers));
         }
 
         return sprintf(
-            'DID renewal: %s (+%d more)',
+            'DID renewal %s: %s (+%d more)',
+            $modeLabel,
             implode(', ', array_slice($ddiNumbers, 0, 3)),
             $count - 3
         );
     }
 
     /**
-     * Advance the DDI renewal date by 1 month
+     * Advance renewal dates for all DDIs based on mode
+     *
+     * @param CompanyInterface $company
+     * @param DdiInterface[] $ddis
+     * @param string $renewalMode
+     */
+    private function advanceRenewalDates(CompanyInterface $company, array $ddis, string $renewalMode): void
+    {
+        if ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED) {
+            // Consolidated mode: advance all to anchor + 1 month, update company anchor
+            $this->advanceRenewalDatesConsolidated($company, $ddis);
+        } else {
+            // per_did mode: each DID advances independently
+            foreach ($ddis as $ddi) {
+                $this->advanceRenewalDatePerDid($ddi);
+            }
+        }
+    }
+
+    /**
+     * Advance a single DDI's renewal date by 1 month (per_did mode)
      *
      * @param DdiInterface $ddi
      */
-    private function advanceRenewalDate(DdiInterface $ddi): void
+    private function advanceRenewalDatePerDid(DdiInterface $ddi): void
     {
         $currentRenewalAt = $ddi->getNextRenewalAt();
         if (!$currentRenewalAt) {
@@ -321,11 +361,62 @@ class DidRenewalService implements DidRenewalServiceInterface
         $this->entityTools->persistDto($ddiDto, $ddi, true);
 
         $this->logger->debug(sprintf(
-            'DID #%d (%s): nextRenewalAt advanced from %s to %s',
+            'DID #%d (%s) [per_did]: nextRenewalAt advanced from %s to %s',
             $ddi->getId(),
             $ddi->getDdie164(),
             $currentRenewalAt->format('Y-m-d'),
             $newRenewalAt->format('Y-m-d')
         ));
+    }
+
+    /**
+     * Advance all DDIs to anchor + 1 month and update company anchor (consolidated mode)
+     *
+     * @param CompanyInterface $company
+     * @param DdiInterface[] $ddis
+     */
+    private function advanceRenewalDatesConsolidated(CompanyInterface $company, array $ddis): void
+    {
+        // Get current anchor
+        $currentAnchor = $company->getDidRenewalAnchor();
+        if (!$currentAnchor) {
+            // Fallback: use the first DID's renewal date
+            $firstDdi = reset($ddis);
+            $currentAnchor = $firstDdi ? $firstDdi->getNextRenewalAt() : new \DateTime();
+        }
+
+        // Convert to DateTime
+        if ($currentAnchor instanceof \DateTimeImmutable) {
+            $currentAnchor = \DateTime::createFromInterface($currentAnchor);
+        }
+
+        // Calculate new anchor (+ 1 month)
+        $newAnchor = (clone $currentAnchor)->modify('+1 month');
+
+        // Update company anchor
+        $companyDto = $company->toDto();
+        $companyDto->setDidRenewalAnchor($newAnchor);
+        $this->entityTools->persistDto($companyDto, $company, true);
+
+        $this->logger->debug(sprintf(
+            'Company #%d [consolidated]: anchor advanced from %s to %s',
+            $company->getId(),
+            $currentAnchor->format('Y-m-d'),
+            $newAnchor->format('Y-m-d')
+        ));
+
+        // Update all DDIs to the new anchor
+        foreach ($ddis as $ddi) {
+            $ddiDto = $ddi->toDto();
+            $ddiDto->setNextRenewalAt($newAnchor);
+            $this->entityTools->persistDto($ddiDto, $ddi, true);
+
+            $this->logger->debug(sprintf(
+                'DID #%d (%s) [consolidated]: nextRenewalAt set to %s',
+                $ddi->getId(),
+                $ddi->getDdie164(),
+                $newAnchor->format('Y-m-d')
+            ));
+        }
     }
 }

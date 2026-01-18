@@ -8,6 +8,10 @@ declare(strict_types=1);
  * Server: vm-ivozprovider-lab (185.16.41.36)
  * Module: ivozprovider-did-renewal
  *
+ * Supports two renewal modes (per Brand.didRenewalMode):
+ * - per_did (default): Each DID has independent renewal dates
+ * - consolidated: All DIDs renew on company anchor date
+ *
  * Usage: php bin/console ivozprovider:did:renew
  * Cron:  0 2 * * * php /opt/irontec/ivozprovider/web/rest/brand/bin/console ivozprovider:did:renew
  */
@@ -18,6 +22,7 @@ use Ivoz\Core\Domain\Service\EntityTools;
 use Ivoz\Provider\Domain\Model\Company\CompanyInterface;
 use Ivoz\Provider\Domain\Model\Company\CompanyRepository;
 use Ivoz\Provider\Domain\Service\Ddi\DidRenewalServiceInterface;
+use Ivoz\Provider\Domain\Service\Ddi\FirstPeriodCalculator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -198,7 +203,19 @@ HELP
         $balance = $this->didRenewalService->getCompanyBalance($company);
         $canRenewFromBalance = $this->didRenewalService->canRenewFromBalance($company, $ddis);
 
-        $io->section(sprintf('Company: %s (ID: %d)', $company->getName(), $company->getId()));
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand?->getDidRenewalMode() ?? FirstPeriodCalculator::MODE_PER_DID;
+        $modeLabel = $renewalMode === FirstPeriodCalculator::MODE_PER_DID ? 'per_did' : 'consolidated';
+        $anchor = $company->getDidRenewalAnchor();
+
+        // Build mode info string
+        $modeInfo = sprintf('[%s mode]', $modeLabel);
+        if ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED && $anchor !== null) {
+            $modeInfo .= sprintf(' anchor: %s', $anchor->format('Y-m-d'));
+        }
+
+        $io->section(sprintf('Company: %s (ID: %d) %s', $company->getName(), $company->getId(), $modeInfo));
         $io->text([
             sprintf('  - DIDs due: %d (total: €%.2f)', $ddiCount, $totalCost),
             sprintf('  - Balance: €%.2f', $balance),
@@ -209,11 +226,30 @@ HELP
         if ($io->isVerbose()) {
             $ddiList = [];
             foreach ($ddis as $ddi) {
+                $currentRenewal = $ddi->getNextRenewalAt();
+                $currentRenewalStr = $currentRenewal?->format('Y-m-d') ?? 'not set';
+
+                // Calculate expected new renewal date based on mode
+                if ($renewalMode === FirstPeriodCalculator::MODE_PER_DID) {
+                    // per_did: each DID advances by 1 month independently
+                    $expectedNext = $currentRenewal !== null
+                        ? (clone $currentRenewal)->modify('+1 month')->format('Y-m-d')
+                        : 'N/A';
+                } else {
+                    // consolidated: all DIDs advance to anchor + 1 month
+                    if ($anchor !== null) {
+                        $expectedNext = (clone $anchor)->modify('+1 month')->format('Y-m-d');
+                    } else {
+                        $expectedNext = 'anchor not set';
+                    }
+                }
+
                 $ddiList[] = sprintf(
-                    '    • %s (€%.2f/mo, renewal: %s)',
+                    '    • %s (€%.2f/mo, current: %s → new: %s)',
                     $ddi->getDdie164(),
                     $ddi->getMonthlyPrice() ?? 0,
-                    $ddi->getNextRenewalAt()?->format('Y-m-d') ?? 'not set'
+                    $currentRenewalStr,
+                    $expectedNext
                 );
             }
             $io->text($ddiList);

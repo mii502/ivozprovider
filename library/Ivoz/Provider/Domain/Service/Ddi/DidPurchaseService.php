@@ -48,9 +48,21 @@ class DidPurchaseService implements DidPurchaseServiceInterface
      */
     public function preview(CompanyInterface $company, DdiInterface $ddi): array
     {
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand->getDidRenewalMode();
+
+        // Get anchor date for consolidated mode
+        $anchorDate = ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED)
+            ? $company->getDidRenewalAnchor()
+            : null;
+
         $calculation = $this->firstPeriodCalculator->preview(
             $ddi->getSetupPrice(),
-            $ddi->getMonthlyPrice()
+            $ddi->getMonthlyPrice(),
+            $renewalMode,
+            null, // purchaseDate - use now
+            $anchorDate
         );
 
         $currentBalance = $this->getCompanyBalance($company);
@@ -79,6 +91,8 @@ class DidPurchaseService implements DidPurchaseServiceInterface
             'balanceAfterPurchase' => round($balanceAfterPurchase, 2),
             'canPurchase' => $balanceAfterPurchase >= 0,
             'breakdown' => $calculation['breakdown'],
+            'isFullMonth' => $calculation['isFullMonth'],
+            'renewalMode' => $calculation['renewalMode'],
         ];
     }
 
@@ -87,11 +101,21 @@ class DidPurchaseService implements DidPurchaseServiceInterface
      */
     public function purchase(CompanyInterface $company, DdiInterface $ddi): PurchaseResult
     {
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand->getDidRenewalMode();
+
+        // Get anchor date for consolidated mode
+        $anchorDate = ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED)
+            ? $company->getDidRenewalAnchor()
+            : null;
+
         $this->logger->info(sprintf(
-            'DID purchase initiated: Company #%d purchasing DID #%d (%s)',
+            'DID purchase initiated: Company #%d purchasing DID #%d (%s) [mode=%s]',
             $company->getId(),
             $ddi->getId(),
-            $ddi->getDdie164()
+            $ddi->getDdie164(),
+            $renewalMode
         ));
 
         // Step 1: Verify DID is still available
@@ -103,10 +127,13 @@ class DidPurchaseService implements DidPurchaseServiceInterface
             return PurchaseResult::ddiNotAvailable($ddi->getId());
         }
 
-        // Step 2: Calculate costs
+        // Step 2: Calculate costs with mode
         $calculation = $this->firstPeriodCalculator->calculate(
             $ddi->getSetupPrice(),
-            $ddi->getMonthlyPrice()
+            $ddi->getMonthlyPrice(),
+            $renewalMode,
+            null, // purchaseDate - use now
+            $anchorDate
         );
         $totalCost = $calculation['totalDueNow'];
 
@@ -134,18 +161,29 @@ class DidPurchaseService implements DidPurchaseServiceInterface
         // Get updated balance after deduction
         $newBalance = $this->getCompanyBalance($company);
 
-        // Step 5: Create invoice
+        // Step 5: For consolidated mode first DID, set the anchor date
+        if ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED && $anchorDate === null) {
+            $this->setCompanyDidRenewalAnchor($company, $calculation['nextRenewalDate']);
+            $this->logger->info(sprintf(
+                'DID purchase: Set didRenewalAnchor for Company #%d to %s',
+                $company->getId(),
+                $calculation['nextRenewalDate']->format('Y-m-d')
+            ));
+        }
+
+        // Step 6: Create invoice
         $invoice = $this->createInvoice($company, $ddi, $totalCost, $calculation);
 
-        // Step 6: Update DDI
+        // Step 7: Update DDI
         $this->assignDdiToCompany($ddi, $company, $calculation['nextRenewalDate']);
 
         $this->logger->info(sprintf(
-            'DID purchase successful: Company #%d purchased DID #%d, charged %.2f, Invoice #%s',
+            'DID purchase successful: Company #%d purchased DID #%d, charged %.2f, Invoice #%s [mode=%s]',
             $company->getId(),
             $ddi->getId(),
             $totalCost,
-            $invoice->getNumber()
+            $invoice->getNumber(),
+            $renewalMode
         ));
 
         return PurchaseResult::success(
@@ -161,9 +199,21 @@ class DidPurchaseService implements DidPurchaseServiceInterface
      */
     public function canAfford(CompanyInterface $company, DdiInterface $ddi): bool
     {
+        // Get renewal mode from brand
+        $brand = $company->getBrand();
+        $renewalMode = $brand->getDidRenewalMode();
+
+        // Get anchor date for consolidated mode
+        $anchorDate = ($renewalMode === FirstPeriodCalculator::MODE_CONSOLIDATED)
+            ? $company->getDidRenewalAnchor()
+            : null;
+
         $calculation = $this->firstPeriodCalculator->calculate(
             $ddi->getSetupPrice(),
-            $ddi->getMonthlyPrice()
+            $ddi->getMonthlyPrice(),
+            $renewalMode,
+            null, // purchaseDate - use now
+            $anchorDate
         );
 
         $currentBalance = $this->getCompanyBalance($company);
@@ -314,5 +364,22 @@ class DidPurchaseService implements DidPurchaseServiceInterface
         }
 
         return true;
+    }
+
+    /**
+     * Set the didRenewalAnchor for a company (consolidated mode first DID)
+     */
+    private function setCompanyDidRenewalAnchor(
+        CompanyInterface $company,
+        \DateTimeInterface $anchorDate
+    ): void {
+        // Convert to DateTime for DTO compatibility
+        $anchor = $anchorDate instanceof \DateTimeImmutable
+            ? \DateTime::createFromInterface($anchorDate)
+            : ($anchorDate instanceof \DateTime ? $anchorDate : new \DateTime($anchorDate->format('Y-m-d')));
+
+        $companyDto = $company->toDto();
+        $companyDto->setDidRenewalAnchor($anchor);
+        $this->entityTools->persistDto($companyDto, $company, true);
     }
 }
