@@ -30,6 +30,9 @@ export type DdiPropertyList<T> = {
   company?: T;
   useDdiProviderRoutingTag?: T;
   routingTag?: T;
+  setupPrice?: T;
+  monthlyPrice?: T;
+  inventoryStatus?: T;
 };
 
 export type DdiProperties = DdiPropertyList<Partial<PropertySpec>>;

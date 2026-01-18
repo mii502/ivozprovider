@@ -207,6 +207,23 @@ const properties: DdiProperties = {
     label: _('Custom Routing Tag'),
     null: _('Unassigned'),
   },
+  setupPrice: {
+    label: _('Setup Price'),
+  },
+  monthlyPrice: {
+    label: _('Monthly Price'),
+  },
+  inventoryStatus: {
+    label: _('Inventory Status'),
+    enum: {
+      available: _('Available'),
+      reserved: _('Reserved'),
+      assigned: _('Assigned'),
+      suspended: _('Suspended'),
+      disabled: _('Disabled'),
+    },
+    default: 'available',
+  },
 };
 
 const ddi: EntityInterface = {
@@ -219,7 +236,7 @@ const ddi: EntityInterface = {
   toStr: (row: DdiPropertyList<EntityValues>) => `${row.ddie164}`,
   properties,
   defaultOrderBy: '',
-  columns: ['ddie164', 'company', 'ddiProvider', 'description'],
+  columns: ['ddie164', 'company', 'inventoryStatus', 'setupPrice', 'monthlyPrice', 'ddiProvider'],
   acl: {
     ...defaultEntityBehavior.acl,
     iden: 'DDIs',

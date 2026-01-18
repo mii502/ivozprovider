@@ -50,6 +50,10 @@ class DdiDto extends DdiDtoAbstract
                 'conditionalRouteId' => 'conditionalRoute',
                 'retailAccountId' => 'retailAccount',
                 'locutionId' => 'locution',
+                'type' => 'type',
+                'setupPrice' => 'setupPrice',
+                'monthlyPrice' => 'monthlyPrice',
+                'inventoryStatus' => 'inventoryStatus',
             ];
         } else {
             $response = parent::getPropertyMap(...func_get_args());
@@ -101,6 +105,9 @@ class DdiDto extends DdiDtoAbstract
             'countryId',
             'useDdiProviderRoutingTag',
             'routingTagId',
+            'setupPrice',
+            'monthlyPrice',
+            'inventoryStatus',
         ];
 
         return self::filterFields($response, $allowedFields);
