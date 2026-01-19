@@ -5,6 +5,7 @@ import EntityInterface, {
 import _ from '@irontec/ivoz-ui/services/translations/translate';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 
+import Action from './Action';
 import {
   AvailableDdiProperties,
   AvailableDdiPropertyList,
@@ -66,6 +67,7 @@ const AvailableDdi: EntityInterface = {
   defaultOrderBy: 'countryName',
   defaultOrderDirection: OrderDirection.asc,
   // Read-only entity - customers can browse but not modify
+  // detail: false - users buy directly from list via row action
   acl: {
     ...defaultEntityBehavior.acl,
     iden: 'AvailableDdis',
@@ -73,15 +75,11 @@ const AvailableDdi: EntityInterface = {
     update: false,
     delete: false,
     read: true,
-    detail: true,
+    detail: false,
   },
   toStr: (row: AvailableDdiPropertyList<string>) => row.ddiE164 as string,
   ListDecorator,
-  View: async () => {
-    const module = await import('./View');
-
-    return module.default;
-  },
+  customActions: Action,
 };
 
 export default AvailableDdi;

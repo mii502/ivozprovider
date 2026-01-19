@@ -454,14 +454,16 @@ const getEntityMap = (): ExtendedRouteMap => {
         {
           entity: entities.AvailableDdi,
           // Override ACLs for custom endpoint not in API schema
+          // detail: false - users buy directly from list via row action
           aclOverride: () => ({
             iden: 'AvailableDdis',
             create: false,
             read: true,
-            detail: true,
+            detail: false,
             update: false,
             delete: false,
           }),
+          children: [...Object.values(entities.AvailableDdi.customActions)],
         },
         {
           entity: entities.MyDids,
