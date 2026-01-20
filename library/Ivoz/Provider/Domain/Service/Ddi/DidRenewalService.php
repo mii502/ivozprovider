@@ -256,8 +256,13 @@ class DidRenewalService implements DidRenewalServiceInterface
         // For multi-DDI renewals, we don't link a single DDI
         // The statusMsg contains the DDI list
         // For single DDI, we can link it
+        // Always set ddiE164 (first DDI for multi) for historical tracking
         if (count($ddis) === 1) {
             $invoiceDto->setDdiId($ddis[0]->getId());
+            $invoiceDto->setDdiE164($ddis[0]->getDdie164());
+        } else {
+            // For multi-DDI renewals, store first DDI E164 as primary reference
+            $invoiceDto->setDdiE164($ddis[0]->getDdie164());
         }
 
         // Set sync status based on payment method

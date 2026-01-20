@@ -309,7 +309,8 @@ class DidPurchaseService implements DidPurchaseServiceInterface
             ->setCompanyId($company->getId())
             ->setInvoiceType(InvoiceInterface::INVOICE_TYPE_DID_PURCHASE)
             ->setSyncStatus(InvoiceInterface::SYNC_STATUS_NOT_APPLICABLE)
-            ->setDdiId($ddi->getId());
+            ->setDdiId($ddi->getId())
+            ->setDdiE164($ddi->getDdie164());
 
         /** @var InvoiceInterface $invoice */
         $invoice = $this->entityTools->persistDto($invoiceDto, null, true);

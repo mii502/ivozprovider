@@ -184,6 +184,11 @@ interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterfa
     public function getDdi(): ?DdiInterface;
 
     /**
+     * Get permanent E.164 phone number reference - survives DDI deletion via UnlinkDdi
+     */
+    public function getDdiE164(): ?string;
+
+    /**
      * Check if invoice should be synced to WHMCS
      */
     public function shouldSyncToWhmcs(): bool;

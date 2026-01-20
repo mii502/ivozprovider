@@ -21,22 +21,26 @@ use Psr\Log\LoggerInterface;
  * Handler for releasing DIDs back to inventory on WHMCS overdue webhook
  *
  * When a DID renewal invoice is marked overdue (non-payment), this handler:
- * 1. Releases the DDI(s) back to inventory (inventoryStatus='available')
- * 2. Removes company assignment
+ * 1. Uses UnlinkDdi pattern to delete and recreate DDI (preserves E.164 number)
+ * 2. Sets inventory status to 'available' on the new DDI
  * 3. Clears dates (assignedAt, nextRenewalAt)
- * 4. Disables the DID
+ *
+ * The Invoice.ddiE164 field preserves the historical phone number reference
+ * even after the original DDI entity is deleted.
  *
  * This is a permanent release - the customer must repurchase the DID if available.
  *
  * @see DidRenewalService For the daily renewal cron that creates these invoices
  * @see WhmcsOverdueWebhookController For the webhook that calls this handler
+ * @see UnlinkDdi For the DDI unlink pattern used here
  */
 class DidRenewalOverdueHandler implements DidRenewalOverdueHandlerInterface
 {
     public function __construct(
         private readonly EntityTools $entityTools,
         private readonly DdiRepository $ddiRepository,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly UnlinkDdi $unlinkDdiService
     ) {
     }
 
@@ -113,11 +117,18 @@ class DidRenewalOverdueHandler implements DidRenewalOverdueHandlerInterface
     }
 
     /**
-     * Release a single DDI back to inventory
+     * Release a single DDI back to inventory using UnlinkDdi pattern
+     *
+     * Uses IvozProvider's standard UnlinkDdi service which:
+     * 1. Deletes the existing DDI entity
+     * 2. Creates a new DDI with same number but no company assignment
+     *
+     * The Invoice.ddiE164 field preserves the historical phone number reference
+     * even though Invoice.ddi FK will become NULL after deletion.
      *
      * @param DdiInterface $ddi
      * @param InvoiceInterface $invoice For logging context
-     * @return array{ddi_id: int, ddi_number: string, previous_company_id: int}|null
+     * @return array{ddi_number: string, previous_company_id: int, new_ddi_id: int}|null
      */
     private function releaseDdi(DdiInterface $ddi, InvoiceInterface $invoice): ?array
     {
@@ -132,32 +143,41 @@ class DidRenewalOverdueHandler implements DidRenewalOverdueHandlerInterface
 
         $previousCompanyId = $ddi->getCompany()?->getId();
         $ddiNumber = $ddi->getDdie164();
+        $oldDdiId = $ddi->getId();
 
-        // Use DTO pattern for entity updates
-        $ddiDto = $ddi->toDto();
-        $ddiDto
+        // Preserve pricing info for inventory (UnlinkDdi doesn't preserve these)
+        $setupPrice = $ddi->getSetupPrice();
+        $monthlyPrice = $ddi->getMonthlyPrice();
+
+        // Use UnlinkDdi pattern - deletes DDI and recreates with no company
+        // Invoice.ddiId FK will become NULL (ON DELETE SET NULL)
+        // Invoice.ddiE164 remains intact for historical reference
+        $newDdi = $this->unlinkDdiService->execute($ddi);
+
+        // Set inventory fields on the new DDI
+        $newDdiDto = $newDdi->toDto();
+        $newDdiDto
             ->setInventoryStatus(DdiInterface::INVENTORYSTATUS_AVAILABLE)
-            ->setCompanyId(null)
             ->setAssignedAt(null)
-            ->setNextRenewalAt(null);
+            ->setNextRenewalAt(null)
+            ->setSetupPrice($setupPrice)
+            ->setMonthlyPrice($monthlyPrice);
+        $this->entityTools->persistDto($newDdiDto, $newDdi, true);
 
-        $this->entityTools->persistDto($ddiDto, $ddi, false);
-
-        // Also disable routing to prevent any calls
-        $ddi->setRouteType(null);
-
-        $this->logger->warning('Released DID due to non-payment', [
-            'ddi_id' => $ddi->getId(),
+        $this->logger->warning('Released DID via UnlinkDdi due to non-payment', [
+            'old_ddi_id' => $oldDdiId,
+            'new_ddi_id' => $newDdi->getId(),
             'ddi_number' => $ddiNumber,
             'previous_company_id' => $previousCompanyId,
             'invoice_id' => $invoice->getId(),
             'invoice_number' => $invoice->getNumber(),
+            'invoice_ddi_e164' => $invoice->getDdiE164(),
         ]);
 
         return [
-            'ddi_id' => (int) $ddi->getId(),
             'ddi_number' => $ddiNumber,
             'previous_company_id' => (int) $previousCompanyId,
+            'new_ddi_id' => (int) $newDdi->getId(),
         ];
     }
 

@@ -82,5 +82,11 @@
         <join-column name="ddiId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
       </join-columns>
     </many-to-one>
+    <!-- Permanent E.164 phone number reference - survives DDI deletion via UnlinkDdi -->
+    <field name="ddiE164" type="string" column="ddiE164" length="25" nullable="true">
+      <options>
+        <option name="fixed"/>
+      </options>
+    </field>
   </mapped-superclass>
 </doctrine-mapping>

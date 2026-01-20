@@ -83,7 +83,14 @@ services:
   ## Releases DIDs back to inventory on WHMCS overdue webhook
   #######################################
 
-  # DID Renewal Overdue Handler - Releases DIDs on non-payment
+  # UnlinkDdi Service - Deletes and recreates DDI to release from company
+  # Used by DidRenewalOverdueHandler for clean DDI release
+  Ivoz\Provider\Domain\Service\Ddi\UnlinkDdi:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  # DID Renewal Overdue Handler - Releases DIDs on non-payment (uses UnlinkDdi pattern)
   Ivoz\Provider\Domain\Service\Ddi\DidRenewalOverdueHandler:
     autowire: true
     autoconfigure: true

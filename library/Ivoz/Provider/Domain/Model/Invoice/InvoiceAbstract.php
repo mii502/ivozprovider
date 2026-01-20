@@ -148,6 +148,12 @@ abstract class InvoiceAbstract
     protected $ddi = null;
 
     /**
+     * Permanent E.164 phone number reference - survives DDI deletion via UnlinkDdi
+     * @var ?string
+     */
+    protected $ddiE164 = null;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -254,7 +260,8 @@ abstract class InvoiceAbstract
             ->setSyncError($dto->getSyncError())
             ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
             ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
-            ->setDdi($fkTransformer->transform($dto->getDdi()));
+            ->setDdi($fkTransformer->transform($dto->getDdi()))
+            ->setDdiE164($dto->getDdiE164());
 
         $self->initChangelog();
 
@@ -305,7 +312,8 @@ abstract class InvoiceAbstract
             ->setSyncError($dto->getSyncError())
             ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
             ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
-            ->setDdi($fkTransformer->transform($dto->getDdi()));
+            ->setDdi($fkTransformer->transform($dto->getDdi()))
+            ->setDdiE164($dto->getDdiE164());
 
         return $this;
     }
@@ -340,7 +348,8 @@ abstract class InvoiceAbstract
             ->setSyncError(self::getSyncError())
             ->setSyncAttempts(self::getSyncAttempts())
             ->setInvoiceType(self::getInvoiceType())
-            ->setDdi(Ddi::entityToDto(self::getDdi(), $depth));
+            ->setDdi(Ddi::entityToDto(self::getDdi(), $depth))
+            ->setDdiE164(self::getDdiE164());
     }
 
     /**
@@ -373,7 +382,8 @@ abstract class InvoiceAbstract
             'syncError' => self::getSyncError(),
             'syncAttempts' => self::getSyncAttempts(),
             'invoiceType' => self::getInvoiceType(),
-            'ddiId' => self::getDdi()?->getId()
+            'ddiId' => self::getDdi()?->getId(),
+            'ddiE164' => self::getDdiE164()
         ];
     }
 
@@ -745,5 +755,21 @@ abstract class InvoiceAbstract
     public function getDdi(): ?DdiInterface
     {
         return $this->ddi;
+    }
+
+    protected function setDdiE164(?string $ddiE164 = null): static
+    {
+        if (!is_null($ddiE164)) {
+            Assertion::maxLength($ddiE164, 25, 'ddiE164 value "%s" is too long, it should have no more than %d characters, but has %d characters.');
+        }
+
+        $this->ddiE164 = $ddiE164;
+
+        return $this;
+    }
+
+    public function getDdiE164(): ?string
+    {
+        return $this->ddiE164;
     }
 }

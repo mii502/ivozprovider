@@ -152,6 +152,12 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
      */
     private $ddi = null;
 
+    /**
+     * Permanent E.164 phone number reference - survives DDI deletion via UnlinkDdi
+     * @var string|null
+     */
+    private $ddiE164 = null;
+
     public function __construct(?int $id = null)
     {
         $this->setId($id);
@@ -194,7 +200,8 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'syncError' => 'syncError',
             'syncAttempts' => 'syncAttempts',
             'invoiceType' => 'invoiceType',
-            'ddiId' => 'ddi'
+            'ddiId' => 'ddi',
+            'ddiE164' => 'ddiE164'
         ];
     }
 
@@ -232,7 +239,8 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'syncError' => $this->getSyncError(),
             'syncAttempts' => $this->getSyncAttempts(),
             'invoiceType' => $this->getInvoiceType(),
-            'ddi' => $this->getDdi()
+            'ddi' => $this->getDdi(),
+            'ddiE164' => $this->getDdiE164()
         ];
 
         if (!$hideSensitiveData) {
@@ -678,5 +686,17 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
         }
 
         return null;
+    }
+
+    public function setDdiE164(?string $ddiE164): static
+    {
+        $this->ddiE164 = $ddiE164;
+
+        return $this;
+    }
+
+    public function getDdiE164(): ?string
+    {
+        return $this->ddiE164;
     }
 }
