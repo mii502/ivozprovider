@@ -50,6 +50,11 @@ interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterfa
 
     public const SYNC_STATUS_FAILED = 'failed';
 
+    // Payment method tracking (Balance-First billing model)
+    public const PAID_VIA_BALANCE = 'balance';
+
+    public const PAID_VIA_WHMCS = 'whmcs';
+
     /**
      * @codeCoverageIgnore
      * @return array<string, mixed>
@@ -189,14 +194,29 @@ interface InvoiceInterface extends LoggableEntityInterface, FileContainerInterfa
     public function getDdiE164(): ?string;
 
     /**
+     * Get how this invoice was paid (null=unpaid, 'balance'=Company.balance, 'whmcs'=WHMCS gateway)
+     */
+    public function getPaidVia(): ?string;
+
+    /**
      * Check if invoice should be synced to WHMCS
      */
     public function shouldSyncToWhmcs(): bool;
 
     /**
+     * Check if invoice has been paid via Company.balance (silent billing)
+     */
+    public function isPaidViaBalance(): bool;
+
+    /**
      * Check if invoice has been paid via WHMCS
      */
     public function isPaidViaWhmcs(): bool;
+
+    /**
+     * Mark invoice as paid via Company.balance (silent billing)
+     */
+    public function markAsPaidViaBalance(): static;
 
     /**
      * Mark invoice as synced to WHMCS

@@ -143,6 +143,13 @@ abstract class InvoiceAbstract
     protected $invoiceType = 'standard';
 
     /**
+     * How invoice was paid (null=unpaid, 'balance'=Company.balance, 'whmcs'=WHMCS gateway)
+     * @var ?string
+     * comment: enum:balance|whmcs
+     */
+    protected $paidVia = null;
+
+    /**
      * @var ?DdiInterface
      */
     protected $ddi = null;
@@ -260,6 +267,7 @@ abstract class InvoiceAbstract
             ->setSyncError($dto->getSyncError())
             ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
             ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
+            ->setPaidVia($dto->getPaidVia())
             ->setDdi($fkTransformer->transform($dto->getDdi()))
             ->setDdiE164($dto->getDdiE164());
 
@@ -312,6 +320,7 @@ abstract class InvoiceAbstract
             ->setSyncError($dto->getSyncError())
             ->setSyncAttempts($dto->getSyncAttempts() ?? 0)
             ->setInvoiceType($dto->getInvoiceType() ?? 'standard')
+            ->setPaidVia($dto->getPaidVia())
             ->setDdi($fkTransformer->transform($dto->getDdi()))
             ->setDdiE164($dto->getDdiE164());
 
@@ -348,6 +357,7 @@ abstract class InvoiceAbstract
             ->setSyncError(self::getSyncError())
             ->setSyncAttempts(self::getSyncAttempts())
             ->setInvoiceType(self::getInvoiceType())
+            ->setPaidVia(self::getPaidVia())
             ->setDdi(Ddi::entityToDto(self::getDdi(), $depth))
             ->setDdiE164(self::getDdiE164());
     }
@@ -382,6 +392,7 @@ abstract class InvoiceAbstract
             'syncError' => self::getSyncError(),
             'syncAttempts' => self::getSyncAttempts(),
             'invoiceType' => self::getInvoiceType(),
+            'paidVia' => self::getPaidVia(),
             'ddiId' => self::getDdi()?->getId(),
             'ddiE164' => self::getDdiE164()
         ];
@@ -743,6 +754,29 @@ abstract class InvoiceAbstract
     public function getInvoiceType(): string
     {
         return $this->invoiceType;
+    }
+
+    protected function setPaidVia(?string $paidVia = null): static
+    {
+        if (!is_null($paidVia)) {
+            Assertion::choice(
+                $paidVia,
+                [
+                    InvoiceInterface::PAID_VIA_BALANCE,
+                    InvoiceInterface::PAID_VIA_WHMCS,
+                ],
+                'paidVia value "%s" is not an element of the valid values: %s'
+            );
+        }
+
+        $this->paidVia = $paidVia;
+
+        return $this;
+    }
+
+    public function getPaidVia(): ?string
+    {
+        return $this->paidVia;
     }
 
     protected function setDdi(?DdiInterface $ddi = null): static

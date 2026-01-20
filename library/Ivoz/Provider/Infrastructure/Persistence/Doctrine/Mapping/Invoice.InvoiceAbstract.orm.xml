@@ -77,6 +77,12 @@
         <option name="comment">[enum:standard|did_purchase|did_renewal|balance_topup]</option>
       </options>
     </field>
+    <!-- Payment method tracking (Balance-First billing model) -->
+    <field name="paidVia" type="string" column="paidVia" length="20" nullable="true">
+      <options>
+        <option name="comment">[enum:balance|whmcs]</option>
+      </options>
+    </field>
     <many-to-one field="ddi" target-entity="Ivoz\Provider\Domain\Model\Ddi\DdiInterface" fetch="LAZY">
       <join-columns>
         <join-column name="ddiId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>

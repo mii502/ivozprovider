@@ -148,6 +148,12 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
     private $invoiceType = 'standard';
 
     /**
+     * How invoice was paid (null=unpaid, 'balance'=Company.balance, 'whmcs'=WHMCS gateway)
+     * @var string|null
+     */
+    private $paidVia = null;
+
+    /**
      * @var DdiDto | null
      */
     private $ddi = null;
@@ -200,6 +206,7 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'syncError' => 'syncError',
             'syncAttempts' => 'syncAttempts',
             'invoiceType' => 'invoiceType',
+            'paidVia' => 'paidVia',
             'ddiId' => 'ddi',
             'ddiE164' => 'ddiE164'
         ];
@@ -239,6 +246,7 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
             'syncError' => $this->getSyncError(),
             'syncAttempts' => $this->getSyncAttempts(),
             'invoiceType' => $this->getInvoiceType(),
+            'paidVia' => $this->getPaidVia(),
             'ddi' => $this->getDdi(),
             'ddiE164' => $this->getDdiE164()
         ];
@@ -656,6 +664,18 @@ abstract class InvoiceDtoAbstract implements DataTransferObjectInterface
     public function getInvoiceType(): string
     {
         return $this->invoiceType;
+    }
+
+    public function setPaidVia(?string $paidVia): static
+    {
+        $this->paidVia = $paidVia;
+
+        return $this;
+    }
+
+    public function getPaidVia(): ?string
+    {
+        return $this->paidVia;
     }
 
     public function setDdi(?DdiDto $ddi): static
