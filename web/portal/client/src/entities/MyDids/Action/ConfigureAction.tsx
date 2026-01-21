@@ -27,10 +27,10 @@ const ConfigureAction: ActionFunctionComponent = (props: ActionItemProps) => {
   }
 
   const handleConfigure = () => {
-    // Navigate to DDI detail page for configuration
+    // Navigate to DDI edit/update page for configuration
     // Use process.env.BASE_URL to ensure correct path with /client/ prefix
     const basePath = process.env.BASE_URL || '/client/';
-    navigate(`${basePath}${Ddi.path.replace(/^\//, '')}/${row.id}`);
+    navigate(`${basePath}${Ddi.path.replace(/^\//, '')}/${row.id}/update`);
   };
 
   return (
