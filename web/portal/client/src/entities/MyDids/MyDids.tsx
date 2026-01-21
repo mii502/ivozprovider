@@ -2,7 +2,7 @@
  * MyDids Entity - Customer's purchased phone numbers
  * Server path: /opt/irontec/ivozprovider/web/portal/client/src/entities/MyDids/MyDids.tsx
  * Server: vm-ivozprovider-lab (185.16.41.36)
- * Module: ivozprovider-did-purchase
+ * Module: ivozprovider-did-purchase, ivozprovider-did-release
  */
 
 import defaultEntityBehavior from '@irontec/ivoz-ui/entities/DefaultEntityBehavior';
@@ -12,6 +12,7 @@ import EntityInterface, {
 import _ from '@irontec/ivoz-ui/services/translations/translate';
 import PhoneIcon from '@mui/icons-material/Phone';
 
+import Action from './Action';
 import { MyDidsProperties, MyDidsPropertyList } from './MyDidsProperties';
 
 const properties: MyDidsProperties = {
@@ -60,7 +61,8 @@ const MyDids: EntityInterface = {
   columns,
   defaultOrderBy: 'assignedAt',
   defaultOrderDirection: OrderDirection.desc,
-  // Read-only entity - customers can view but not modify
+  // Read-only entity - customers can view but not modify via standard CRUD
+  // Custom release action allows releasing DIDs
   acl: {
     ...defaultEntityBehavior.acl,
     iden: 'MyDids',
@@ -70,6 +72,7 @@ const MyDids: EntityInterface = {
     read: true,
     detail: true,
   },
+  customActions: Action,
   toStr: (row: MyDidsPropertyList<string>) => row.ddiE164 as string,
   View: async () => {
     const module = await import('./View');
