@@ -147,6 +147,22 @@ services:
         resource: '../src/Controller/DidOrder/*'
         tags: ['controller.service_arguments']
 
+    ###############################
+    ## DID Release Services
+    ###############################
+    Ivoz\Provider\Domain\Service\Ddi\DidReleaseService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Ddi\DidReleaseServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\Ddi\DidReleaseService
+        public: true
+
+    Controller\DidRelease\:
+        resource: '../src/Controller/DidRelease/*'
+        tags: ['controller.service_arguments']
+
     #######################################
     ## API
     #######################################

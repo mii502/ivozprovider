@@ -354,3 +354,15 @@ get_did_order:
     _api_receive: false
   requirements:
     id: '\d+'
+
+###############################
+## DID Release Routes
+###############################
+
+# Release a DID back to marketplace (customer-initiated)
+post_dids_release:
+  path: '/dids/release'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\DidRelease\ReleaseDidAction
+    _api_receive: false
