@@ -7,9 +7,14 @@
 
 import { CustomActionsType } from '@irontec/ivoz-ui/entities/EntityInterface';
 
+import ConfigureAction from './ConfigureAction';
 import ReleaseAction from './ReleaseAction';
 
 const customAction: CustomActionsType = {
+  Configure: {
+    action: ConfigureAction,
+    multiselect: false,
+  },
   Release: {
     action: ReleaseAction,
     multiselect: false,

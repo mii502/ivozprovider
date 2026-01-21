@@ -13,6 +13,7 @@ import _ from '@irontec/ivoz-ui/services/translations/translate';
 import PhoneIcon from '@mui/icons-material/Phone';
 
 import Action from './Action';
+import List from './List';
 import { MyDidsProperties, MyDidsPropertyList } from './MyDidsProperties';
 
 const properties: MyDidsProperties = {
@@ -76,6 +77,7 @@ const MyDids: EntityInterface = {
   },
   customActions: Action,
   toStr: (row: MyDidsPropertyList<string>) => row.ddiE164 as string,
+  List,
   View: async () => {
     const module = await import('./View');
     return module.default;
