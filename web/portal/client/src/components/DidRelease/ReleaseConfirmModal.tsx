@@ -53,12 +53,13 @@ const ReleaseConfirmModal = (props: ReleaseConfirmModalProps): JSX.Element => {
         silenceErrors: true,
       });
 
-      const result = response as ReleaseResponse;
+      // apiPost returns the raw response - could be wrapped in data property or direct
+      const result = (response?.data || response) as ReleaseResponse;
 
-      if (result.success) {
+      if (result?.success) {
         setState('success');
       } else {
-        setError(result.message || _('Failed to release DID'));
+        setError(result?.message || _('Failed to release DID'));
         setState('error');
       }
     } catch (err: unknown) {

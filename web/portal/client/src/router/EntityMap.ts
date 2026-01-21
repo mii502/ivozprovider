@@ -476,6 +476,7 @@ const getEntityMap = (): ExtendedRouteMap => {
             update: false,
             delete: false,
           }),
+          children: [...Object.values(entities.MyDids.customActions)],
         },
         {
           entity: entities.DidOrder,
