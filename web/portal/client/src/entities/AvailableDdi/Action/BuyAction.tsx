@@ -44,7 +44,9 @@ const BuyAction: ActionFunctionComponent = (props: ActionItemProps) => {
 
   const handleSuccess = () => {
     // Navigate to My DIDs after successful purchase
-    navigate(MyDids.path);
+    // Use process.env.BASE_URL to ensure correct path with /client/ prefix
+    const basePath = process.env.BASE_URL || '/client/';
+    navigate(`${basePath}${MyDids.path.replace(/^\//, '')}`);
   };
 
   // Map row data to DdiDetails type for PurchaseModal

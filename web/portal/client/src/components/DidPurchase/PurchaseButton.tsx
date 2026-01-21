@@ -11,6 +11,7 @@ import { Box, Button, styled, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import MyDids from '../../entities/MyDids/MyDids';
 import PurchaseModal from './PurchaseModal';
 import { DdiDetails } from './types';
 
@@ -52,7 +53,9 @@ const PurchaseButton = (props: PurchaseButtonProps): JSX.Element => {
 
   const handlePurchaseSuccess = () => {
     // Navigate to My DIDs page after successful purchase
-    navigate('/my/dids');
+    // Use process.env.BASE_URL to ensure correct path with /client/ prefix
+    const basePath = process.env.BASE_URL || '/client/';
+    navigate(`${basePath}${MyDids.path.replace(/^\//, '')}`);
   };
 
   return (

@@ -29,8 +29,10 @@ const InsufficientBalance = (props: InsufficientBalanceProps): JSX.Element => {
   };
 
   const handleTopUp = () => {
-    // Navigate to balance page - the route depends on your app structure
-    navigate('/my/balance');
+    // Navigate to dashboard where Top Up Balance button is available
+    // Use process.env.BASE_URL to ensure correct path with /client/ prefix
+    const basePath = process.env.BASE_URL || '/client/';
+    navigate(basePath);
   };
 
   return (
