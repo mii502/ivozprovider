@@ -37,9 +37,11 @@ const properties: MyDidsProperties = {
   },
   assignedAt: {
     label: _('Purchased On'),
+    format: 'date',
   },
   nextRenewalAt: {
     label: _('Next Renewal'),
+    format: 'date',
   },
 };
 
