@@ -24,6 +24,22 @@ class Invoice extends InvoiceAbstract implements FileContainerInterface, Invoice
             $this->sanitizeOutDate();
         }
 
+        // DID/balance invoice types are created directly with totals set,
+        // not through InvoiceScheduler. They should NOT be reset on edit.
+        // This mirrors the pattern in mustCheckValidity().
+        $invoiceType = $this->getInvoiceType();
+        $skipResetTypes = [
+            self::INVOICE_TYPE_BALANCE_TOPUP,
+            self::INVOICE_TYPE_DID_PURCHASE,
+            self::INVOICE_TYPE_DID_RENEWAL,
+        ];
+
+        if (in_array($invoiceType, $skipResetTypes, true)) {
+            // DID invoices don't need reset protection - they're created
+            // with final values and should remain editable by brand admin
+            return;
+        }
+
         $ignoredFields = [
             'total',
             'totalWithTax',
