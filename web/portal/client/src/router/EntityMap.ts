@@ -480,6 +480,7 @@ const getEntityMap = (): ExtendedRouteMap => {
         },
         {
           entity: entities.DidOrder,
+          isAccessible: (aboutMe) => aboutMe.billingMethod === 'postpaid',
         },
       ],
     },

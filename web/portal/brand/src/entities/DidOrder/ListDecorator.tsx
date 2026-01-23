@@ -5,6 +5,34 @@ import { Chip, Typography } from '@mui/material';
 const ListDecorator: ListDecoratorType = (props) => {
   const { field, row } = props;
 
+  // Company name - render as plain text
+  if (field === 'companyName') {
+    return (
+      <Typography component="span">
+        {row.companyName || '-'}
+      </Typography>
+    );
+  }
+
+  // Requested date - format as readable date
+  if (field === 'requestedAt') {
+    if (!row.requestedAt) {
+      return <Typography component="span">-</Typography>;
+    }
+    const date = new Date(row.requestedAt);
+    return (
+      <Typography component="span">
+        {date.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
+      </Typography>
+    );
+  }
+
   // Status badge with colors
   if (field === 'status') {
     const colorMap: Record<string, 'warning' | 'success' | 'error' | 'default'> = {
@@ -58,7 +86,11 @@ const ListDecorator: ListDecoratorType = (props) => {
     );
   }
 
-  // Default: return null to use default rendering
+  // Default: return the value as-is for any unhandled field
+  if (row[field] !== undefined && row[field] !== null) {
+    return <Typography component="span">{String(row[field])}</Typography>;
+  }
+
   return null;
 };
 

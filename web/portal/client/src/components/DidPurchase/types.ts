@@ -56,3 +56,31 @@ export interface DdiDetails {
   monthlyPrice: string | number;
   inventoryStatus: string;
 }
+
+// Order types for postpaid customers
+export interface OrderPreviewResponse {
+  ddi: string;
+  ddiId: number;
+  country: string;
+  setupFee: number;
+  monthlyFee: number;
+  canOrder: boolean;
+  reservationDuration: string;
+}
+
+export interface OrderSuccessResponse {
+  success: true;
+  orderId: number;
+  status: string;
+  ddiId: number;
+  ddi: string;
+  message: string;
+}
+
+export interface OrderErrorResponse {
+  success: false;
+  error: string;
+  message: string;
+}
+
+export type OrderResponse = OrderSuccessResponse | OrderErrorResponse;

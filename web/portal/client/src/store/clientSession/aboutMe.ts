@@ -25,6 +25,7 @@ export interface AboutMe {
   retail: boolean;
   wholesale: boolean;
   billingInfo: boolean;
+  billingMethod: string;
   restricted: boolean;
   defaultCountryId: number;
   defaultLocationId: number;

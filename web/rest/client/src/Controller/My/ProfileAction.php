@@ -65,6 +65,7 @@ class ProfileAction
             restricted: $restricted,
             type: $type,
             showBillingInfo: $showBillingInfo,
+            billingMethod: $company->getBillingMethod(),
             defaultCountryId: $company->getCountry()->getId() ?? 0,
             defaultLocationId: $company->getLocation()?->getId(),
             adminRelPublicEntities: $adminRelPublicEntities,

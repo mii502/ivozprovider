@@ -185,10 +185,8 @@ class GetAllOrdersAction
         return [
             '@id' => '/api/brand/did-orders/' . $order->getId(),
             'id' => $order->getId(),
-            'company' => [
-                'id' => $company->getId(),
-                'name' => $company->getName(),
-            ],
+            'company' => $company->getId(),
+            'companyName' => $company->getName(),
             'ddi' => $ddi?->getDdie164(),
             'ddiNumber' => $ddi?->getDdi(),
             'ddiId' => $ddi?->getId(),

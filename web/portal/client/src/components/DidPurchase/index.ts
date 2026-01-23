@@ -7,6 +7,7 @@
 
 export { default as PurchaseButton } from './PurchaseButton';
 export { default as PurchaseModal } from './PurchaseModal';
+export { default as OrderModal } from './OrderModal';
 export { default as PriceBreakdown } from './PriceBreakdown';
 export { default as InsufficientBalance } from './InsufficientBalance';
 export * from './types';

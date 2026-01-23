@@ -1,8 +1,12 @@
 /**
- * Buy Action - Row action to purchase a DID from the marketplace
+ * Buy Action - Row action to purchase/order a DID from the marketplace
  * Server path: /opt/irontec/ivozprovider/web/portal/client/src/entities/AvailableDdi/Action/BuyAction.tsx
  * Server: vm-ivozprovider-lab (185.16.41.36)
  * Module: ivozprovider-did-marketplace
+ *
+ * Shows different modals based on billing method:
+ * - Prepaid/Pseudoprepaid: PurchaseModal (instant balance deduction)
+ * - Postpaid: OrderModal (admin approval required)
  */
 
 import { MoreMenuItem } from '@irontec/ivoz-ui/components/List/Content/Shared/MoreChildEntityLinks';
@@ -16,14 +20,20 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { Tooltip } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useStoreState } from 'store';
 
-import { DdiDetails, PurchaseModal } from '../../../components/DidPurchase';
+import { DdiDetails, PurchaseModal, OrderModal } from '../../../components/DidPurchase';
 import MyDids from '../../MyDids/MyDids';
+import DidOrder from '../../DidOrder/DidOrder';
 
 const BuyAction: ActionFunctionComponent = (props: ActionItemProps) => {
   const { row, variant = 'icon' } = props;
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Get billing method from store to determine which flow to show
+  const aboutMe = useStoreState((state) => state.clientSession.aboutMe.profile);
+  const isPostpaid = aboutMe?.billingMethod === 'postpaid';
 
   if (!row) {
     return null;
@@ -43,10 +53,12 @@ const BuyAction: ActionFunctionComponent = (props: ActionItemProps) => {
   };
 
   const handleSuccess = () => {
-    // Navigate to My DIDs after successful purchase
-    // Use process.env.BASE_URL to ensure correct path with /client/ prefix
+    // Navigate to appropriate page after success
+    // Postpaid: Go to DID Orders to track order status
+    // Prepaid: Go to My DIDs to see purchased DID
     const basePath = process.env.BASE_URL || '/client/';
-    navigate(`${basePath}${MyDids.path.replace(/^\//, '')}`);
+    const targetPath = isPostpaid ? DidOrder.path : MyDids.path;
+    navigate(`${basePath}${targetPath.replace(/^\//, '')}`);
   };
 
   // Map row data to DdiDetails type for PurchaseModal
@@ -61,16 +73,22 @@ const BuyAction: ActionFunctionComponent = (props: ActionItemProps) => {
     inventoryStatus: row.inventoryStatus as string,
   };
 
+  // Button text/tooltip based on billing method
+  const actionLabel = isPostpaid ? _('Request') : _('Buy');
+  const tooltipText = isAvailable
+    ? (isPostpaid ? _('Request this number') : _('Buy this number'))
+    : _('Not available');
+
   return (
     <>
       {variant === 'text' && (
         <MoreMenuItem onClick={handleClickOpen} disabled={!isAvailable}>
-          {_('Buy')}
+          {actionLabel}
         </MoreMenuItem>
       )}
       {variant === 'icon' && (
         <Tooltip
-          title={isAvailable ? _('Buy this number') : _('Not available')}
+          title={tooltipText}
           placement="bottom-start"
           enterTouchDelay={0}
         >
@@ -85,7 +103,15 @@ const BuyAction: ActionFunctionComponent = (props: ActionItemProps) => {
           </span>
         </Tooltip>
       )}
-      {open && (
+      {open && isPostpaid && (
+        <OrderModal
+          open={open}
+          onClose={handleClose}
+          onSuccess={handleSuccess}
+          ddi={ddiDetails}
+        />
+      )}
+      {open && !isPostpaid && (
         <PurchaseModal
           open={open}
           onClose={handleClose}

@@ -48,6 +48,11 @@ class Profile
      */
     private $billingInfo;
 
+    /**
+     * @var string
+     * @AttributeDefinition(type="string")
+     */
+    private $billingMethod;
 
     /**
      * @var int
@@ -87,6 +92,7 @@ class Profile
         bool $restricted,
         string $type,
         ?bool $showBillingInfo,
+        string $billingMethod,
         int $defaultCountryId,
         ?int $defaultLocationId,
         array $adminRelPublicEntities,
@@ -95,6 +101,7 @@ class Profile
         $this->restricted = $restricted;
         $this->setType($type);
         $this->billingInfo = $showBillingInfo ?? false;
+        $this->billingMethod = $billingMethod;
         $this->defaultCountryId = $defaultCountryId;
         $this->defaultLocationId = $defaultLocationId;
 
@@ -137,6 +144,11 @@ class Profile
     public function hasBillingInfo(): bool
     {
         return $this->billingInfo;
+    }
+
+    public function getBillingMethod(): string
+    {
+        return $this->billingMethod;
     }
 
     public function getDefaultCountryId(): int
