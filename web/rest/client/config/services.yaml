@@ -83,6 +83,11 @@ services:
     Ivoz\Provider\Domain\Service\BalanceTopUp\BalanceTopUpService:
         autowire: true
 
+    # CGRates Balance Service (for real-time balance lookups)
+    Ivoz\Provider\Domain\Service\Company\CompanyBalanceServiceInterface:
+        alias: Ivoz\Cgr\Infrastructure\Cgrates\Service\CompanyBalanceService
+        public: true
+
     ###############################
     ## DID Marketplace Services
     ###############################
