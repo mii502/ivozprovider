@@ -366,3 +366,17 @@ post_dids_release:
   defaults:
     _controller: Controller\DidRelease\ReleaseDidAction
     _api_receive: false
+
+###############################
+## WebRTC Credentials Routes
+###############################
+
+# Get WebRTC credentials for a RetailAccount
+get_my_webrtc_credentials:
+  path: '/my/webrtc-credentials/{id}'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\My\GetWebRtcCredentialsAction
+    _api_receive: false
+  requirements:
+    id: '\d+'
