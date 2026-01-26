@@ -87,6 +87,26 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
     };
   }, []);
 
+  // Unregister on page unload/refresh to prevent orphaned registrations
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (uaRef.current) {
+        logWithTime('Page unloading - unregistering');
+        try {
+          uaRef.current.unregister();
+          uaRef.current.stop();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   // Setup session event handlers (ICE handling is in call() eventHandlers.peerconnection)
   const setupSessionHandlers = useCallback((session: RTCSession) => {
     session.on('sending', (e: { request: unknown }) => {
@@ -149,6 +169,19 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
 
   const register = useCallback((credentials: WebRtcCredentials) => {
     try {
+      // IMPORTANT: Cleanup any existing UA before creating a new one
+      // This prevents duplicate registrations when auto-register fires multiple times
+      if (uaRef.current) {
+        logWithTime('Cleaning up existing UA before new registration');
+        try {
+          uaRef.current.unregister();
+          uaRef.current.stop();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+        uaRef.current = null;
+      }
+
       setRegistrationState('registering');
       setError(null);
       credentialsRef.current = credentials;
