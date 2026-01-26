@@ -3,6 +3,36 @@ import { UA, WebSocketInterface } from 'jssip';
 import type { UAConfiguration, CallOptions, IncomingRTCSessionEvent, OutgoingRTCSessionEvent } from 'jssip/src/UA';
 import type { RTCSession, AnswerOptions } from 'jssip/src/RTCSession';
 
+// Monkey-patch JsSIP to accept all incoming calls regardless of R-URI user
+// JsSIP by default rejects INVITEs where the R-URI user doesn't match the registered user
+// This is problematic when Kamailio routes calls using DDI numbers instead of usernames
+// Fix: Override receiveRequest to skip the R-URI user validation
+(() => {
+  const originalReceiveRequest = (UA.prototype as any).receiveRequest;
+  if (originalReceiveRequest && !(UA.prototype as any)._patchedForAcceptAll) {
+    (UA.prototype as any).receiveRequest = function(request: any) {
+      // Temporarily set ruri.user to match our configured user to bypass the check
+      // This allows accepting calls addressed to any user (DDI, extension, etc.)
+      const originalRuriUser = request.ruri?.user;
+      if (request.ruri && this._configuration?.uri?.user) {
+        request.ruri.user = this._configuration.uri.user;
+      }
+
+      // Call original method
+      const result = originalReceiveRequest.call(this, request);
+
+      // Restore original ruri.user for logging/debugging purposes
+      if (request.ruri && originalRuriUser !== undefined) {
+        request.ruri.user = originalRuriUser;
+      }
+
+      return result;
+    };
+    (UA.prototype as any)._patchedForAcceptAll = true;
+    console.log('[JsSIP] Patched to accept all incoming calls (R-URI user check bypassed)');
+  }
+})();
+
 interface WebRtcCredentials {
   sipUser: string;
   sipPassword: string;
