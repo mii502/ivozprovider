@@ -9,6 +9,7 @@ import store, { useStoreActions, useStoreState } from 'store';
 
 import { AppConstants } from '../src/config/AppConstants';
 import { StyledAppApiLoading } from './App.styles';
+import Softphone from './components/Softphone';
 import AppRoutesGuard from './router/AppRoutesGuard';
 import { languagesList } from './translations/languages';
 
@@ -97,6 +98,7 @@ export default function App(): JSX.Element {
         <BrowserRouter>
           <AppRoutesGuard apiSpec={apiSpec} />
         </BrowserRouter>
+        {loggedIn && <Softphone />}
       </div>
     </LocalizationProvider>
   );

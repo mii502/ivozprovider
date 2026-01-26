@@ -12,5 +12,8 @@
     "i18n": "i18next src/**/*.{jsx,tsx,ts} -c i18next-parser.config.mjs",
     "cy:run": "cypress run --browser electron",
     "cy:open": "cypress open"
+  },
+  "dependencies": {
+    "jssip": "^3.10.0"
   }
 }

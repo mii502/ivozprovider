@@ -44,13 +44,19 @@ class GetWebRtcCredentialsAction
         // Build WSS server URL from domain (assumes /ws-sip path convention)
         $wsServer = 'wss://' . $sipDomain . '/ws-sip';
 
+        // Note: We include Google's public STUN server to handle IPv6 candidates quickly.
+        // Without an IPv6-capable STUN server, browsers wait ~40 seconds for IPv6 STUN
+        // responses that will never come (our coturn only listens on IPv4).
         return new JsonResponse([
             'sipUser' => $retailAccount->getName(),
             'sipPassword' => $retailAccount->getPassword(),
             'domain' => $sipDomain,
             'displayName' => $retailAccount->getDescription() ?? $retailAccount->getName(),
             'wsServer' => $wsServer,
-            'stunServers' => ['stun:' . $sipDomain . ':3478'],
+            'stunServers' => [
+                'stun:' . $sipDomain . ':3478',
+                'stun:stun.l.google.com:19302'  // IPv6-capable fallback
+            ],
             'turnServers' => [[
                 'urls' => 'turn:' . $sipDomain . ':3478',
                 'username' => 'webrtc',
