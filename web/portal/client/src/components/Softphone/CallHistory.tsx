@@ -86,9 +86,24 @@ const formatDuration = (duration: number | string): string => {
   return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
 };
 
+// Helper to parse server timestamp as UTC
+// Server returns timestamps in UTC, but format may vary:
+// - "2026-01-27T10:00:00+00:00" (ISO with timezone - parsed correctly)
+// - "2026-01-27 10:00:00" (no timezone - must be treated as UTC)
+const parseServerTimestamp = (dateString: string): Date => {
+  // If already has timezone info (Z or +/-), parse directly
+  if (dateString.includes('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
+    return new Date(dateString);
+  }
+  // Otherwise, append 'Z' to treat as UTC
+  // Also handle space separator by converting to 'T'
+  const isoString = dateString.replace(' ', 'T') + 'Z';
+  return new Date(isoString);
+};
+
 // Helper to format relative time
 const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  const date = parseServerTimestamp(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -106,7 +121,7 @@ const formatRelativeTime = (dateString: string): string => {
 
 // Helper to get date label for grouping
 const getDateLabel = (dateString: string): string => {
-  const date = new Date(dateString);
+  const date = parseServerTimestamp(dateString);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -255,8 +270,8 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
     return formatDuration(call.duration);
   };
 
-  // Fixed height to match Keypad view (NumberDisplay ~60px + DialPad ~300px + CallButton ~80px)
-  const containerMinHeight = 440;
+  // Fixed height to match Keypad view (NumberDisplay 65px + DialPad 356px + CallButton 96px = 517px)
+  const containerMinHeight = 517;
 
   if (loading) {
     return (
@@ -288,7 +303,7 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
   }
 
   return (
-    <Box sx={{ flex: 1, overflow: 'auto', minHeight: containerMinHeight, maxHeight: 440 }}>
+    <Box sx={{ flex: 1, overflow: 'auto', minHeight: containerMinHeight, maxHeight: containerMinHeight }}>
       <List disablePadding>
         {groupedCalls.map((group, groupIndex) => (
           <Box key={group.label}>

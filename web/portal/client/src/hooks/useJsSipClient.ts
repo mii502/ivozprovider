@@ -3,6 +3,9 @@ import { UA, WebSocketInterface } from 'jssip';
 import type { UAConfiguration, CallOptions, IncomingRTCSessionEvent, OutgoingRTCSessionEvent } from 'jssip/src/UA';
 import type { RTCSession, AnswerOptions } from 'jssip/src/RTCSession';
 
+// Set to true to enable verbose console logging for debugging
+const DEBUG = false;
+
 // Monkey-patch JsSIP to accept all incoming calls regardless of R-URI user
 // JsSIP by default rejects INVITEs where the R-URI user doesn't match the registered user
 // This is problematic when Kamailio routes calls using DDI numbers instead of usernames
@@ -29,7 +32,7 @@ import type { RTCSession, AnswerOptions } from 'jssip/src/RTCSession';
       return result;
     };
     (UA.prototype as any)._patchedForAcceptAll = true;
-    console.log('[JsSIP] Patched to accept all incoming calls (R-URI user check bypassed)');
+    if (DEBUG) console.log('[JsSIP] Patched to accept all incoming calls (R-URI user check bypassed)');
   }
 })();
 
@@ -72,8 +75,9 @@ interface UseJsSipClientReturn {
   sendDtmf: (digit: string) => void;
 }
 
-// Diagnostic timing helper
+// Diagnostic timing helper - only logs when DEBUG is true
 const logWithTime = (message: string, ...args: unknown[]) => {
+  if (!DEBUG) return;
   const now = new Date();
   const timestamp = now.toISOString().split('T')[1].replace('Z', '');
   console.log(`[JsSIP ${timestamp}] ${message}`, ...args);
