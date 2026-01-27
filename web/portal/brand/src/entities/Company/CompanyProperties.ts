@@ -60,6 +60,7 @@ export type CompanyPropertyList<T> = {
   applicationServerSet?: T;
   mediaRelaySet?: T;
   location?: T;
+  byonMaxNumbers?: T;
 };
 
 export type CompanyProperties = CompanyPropertyList<Partial<PropertySpec>>;

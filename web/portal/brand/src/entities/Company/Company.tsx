@@ -386,6 +386,16 @@ const properties: CompanyProperties = {
       'Users who do not have a specific location will be linked to this location.'
     ),
   },
+  byonMaxNumbers: {
+    label: _('Max BYON Numbers'),
+    type: 'integer',
+    default: 10,
+    minimum: 0,
+    maximum: 1000,
+    helpText: _(
+      'Maximum number of BYON (Bring Your Own Number) numbers this client can verify and use.'
+    ),
+  },
 };
 
 type MarshallerType = typeof defaultMarshaller;

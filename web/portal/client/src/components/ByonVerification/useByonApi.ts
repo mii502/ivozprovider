@@ -9,13 +9,15 @@ import useCancelToken from '@irontec/ivoz-ui/hooks/useCancelToken';
 import { useCallback, useState } from 'react';
 import { useStoreActions } from 'store';
 
-import { ByonStatus, InitiateResponse, VerifyResponse } from './types';
+import { ByonStatus, InitiateResponse, ValidateResponse, VerifyResponse } from './types';
 
 interface UseByonApiReturn {
   status: ByonStatus | null;
   loading: boolean;
+  validating: boolean;
   error: string | null;
   fetchStatus: () => Promise<ByonStatus | null>;
+  validate: (phoneNumber: string) => Promise<ValidateResponse>;
   initiate: (phoneNumber: string) => Promise<InitiateResponse>;
   verify: (phoneNumber: string, code: string) => Promise<VerifyResponse>;
 }
@@ -23,6 +25,7 @@ interface UseByonApiReturn {
 export const useByonApi = (): UseByonApiReturn => {
   const [status, setStatus] = useState<ByonStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const apiGet = useStoreActions((store) => store.api.get);
@@ -54,6 +57,33 @@ export const useByonApi = (): UseByonApiReturn => {
       return null;
     }
   }, [apiGet, cancelToken]);
+
+  const validate = useCallback(async (phoneNumber: string): Promise<ValidateResponse> => {
+    setValidating(true);
+    setError(null);
+
+    try {
+      const response = await apiPost({
+        path: '/byon/validate',
+        values: { phoneNumber },
+        contentType: 'application/json',
+        cancelToken,
+        silenceErrors: true,
+      });
+
+      const result = (response?.data || response) as ValidateResponse;
+      setValidating(false);
+      return result;
+    } catch (err: unknown) {
+      const errorData = err as { data?: { errorCode?: string; error?: string; detail?: string } };
+      setValidating(false);
+      return {
+        valid: false,
+        errorCode: errorData?.data?.errorCode || 'UNKNOWN_ERROR',
+        error: errorData?.data?.error || errorData?.data?.detail || 'Validation failed',
+      };
+    }
+  }, [apiPost, cancelToken]);
 
   const initiate = useCallback(async (phoneNumber: string): Promise<InitiateResponse> => {
     setLoading(true);
@@ -133,8 +163,10 @@ export const useByonApi = (): UseByonApiReturn => {
   return {
     status,
     loading,
+    validating,
     error,
     fetchStatus,
+    validate,
     initiate,
     verify,
   };

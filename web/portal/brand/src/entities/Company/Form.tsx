@@ -84,6 +84,11 @@ const Form = (props: EntityFormProps): JSX.Element | null => {
         !isWholesale && 'geoIpAllowedCountries',
       ],
     },
+    edit &&
+      (isRetail || isResidential) && {
+        legend: _('BYON'),
+        fields: ['byonMaxNumbers'],
+      },
     {
       legend: _('Geographic Configuration'),
       fields: [

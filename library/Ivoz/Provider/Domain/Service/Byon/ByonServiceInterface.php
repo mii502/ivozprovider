@@ -71,6 +71,24 @@ interface ByonServiceInterface
     public function getStatus(CompanyInterface $company): ByonStatus;
 
     /**
+     * Validate a phone number before sending OTP
+     *
+     * Performs all validations without sending SMS:
+     * - E.164 format validation
+     * - Country detection (returns country name and code)
+     * - Number availability check
+     * - BYON limit check
+     *
+     * Use this to provide instant feedback to users before they
+     * click "Send Code" and consume an SMS credit.
+     *
+     * @param CompanyInterface $company Company to validate for
+     * @param string $phoneNumber E.164 format phone number
+     * @return ByonValidateResult Validation result with country info
+     */
+    public function validate(CompanyInterface $company, string $phoneNumber): ByonValidateResult;
+
+    /**
      * Release a BYON DDI (brand admin only)
      *
      * This removes the BYON flag and allows the number to be verified

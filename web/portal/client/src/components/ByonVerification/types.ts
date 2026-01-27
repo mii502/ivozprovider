@@ -13,6 +13,8 @@ export interface ByonStatus {
   dailyAttemptsRemaining: number;
   dailyAttemptsLimit: number;
   canAddByon: boolean;
+  disabledReason: 'BYON_LIMIT_REACHED' | 'DAILY_LIMIT_REACHED' | null;
+  dailyResetAt: string | null; // ISO 8601 timestamp
 }
 
 export interface InitiateResponse {
@@ -34,6 +36,19 @@ export interface VerifyResponse {
     number: string;
     isByon: boolean;
   };
+}
+
+export interface ValidateResponse {
+  valid: boolean;
+  error?: string;
+  errorCode?: string;
+  country?: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  nationalNumber?: string;
+  e164Number?: string;
 }
 
 export interface ByonError {

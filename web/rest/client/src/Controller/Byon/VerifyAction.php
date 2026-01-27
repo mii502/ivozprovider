@@ -136,6 +136,19 @@ class VerifyAction
             ], $e->getHttpStatusCode());
 
         } catch (\Exception $e) {
+            // Write to file for debugging
+            $logMsg = sprintf(
+                "[%s] BYON VERIFY ERROR\nCompany: %d\nPhone: %s\nError: %s\nFile: %s:%d\nTrace:\n%s\n\n",
+                date('Y-m-d H:i:s'),
+                $company->getId(),
+                $phoneNumber,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+                $e->getTraceAsString()
+            );
+            file_put_contents('/tmp/byon_debug.log', $logMsg, FILE_APPEND);
+
             $this->logger->error('BYON verification failed unexpectedly', [
                 'company_id' => $company->getId(),
                 'phone_number' => substr($phoneNumber, 0, -4) . '****',

@@ -371,6 +371,14 @@ post_dids_release:
 ## BYON Routes
 ###############################
 
+# Validate BYON phone number (pre-SMS check)
+post_byon_validate:
+  path: '/byon/validate'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Byon\ValidateAction
+    _api_receive: false
+
 # Initiate BYON verification (send OTP)
 post_byon_initiate:
   path: '/byon/initiate'

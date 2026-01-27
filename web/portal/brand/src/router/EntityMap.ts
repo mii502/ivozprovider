@@ -13,6 +13,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import RingVolumeIcon from '@mui/icons-material/RingVolume';
 import RoomPreferencesIcon from '@mui/icons-material/RoomPreferences';
 import SettingsIcon from '@mui/icons-material/Settings';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import WalletIcon from '@mui/icons-material/Wallet';
 
 import entities from '../entities';
@@ -525,6 +526,15 @@ const getEntityMap = (): ExtendedRouteMap => {
         },
         {
           entity: entities.Corporation,
+        },
+      ],
+    },
+    {
+      label: _('BYON Numbers'),
+      icon: VerifiedUserIcon,
+      children: [
+        {
+          entity: entities.ByonDdi,
         },
       ],
     },

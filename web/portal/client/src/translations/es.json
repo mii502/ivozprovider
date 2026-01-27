@@ -690,6 +690,12 @@
   "You can use it for inbound calls and as a caller ID for outbound calls.": "Puedes usarlo para llamadas entrantes y como identificador de llamadas salientes.",
   "You can use regular expressions to define values this entry will match.": "Puedes utilizar expresiones regulares para definir qué valores aplicarán.",
   "You have reached the maximum number of BYON numbers": "Has alcanzado el número máximo de números BYON",
+  "You have reached the maximum of {{limit}} BYON numbers. Contact support to increase your limit.": "Has alcanzado el máximo de {{limit}} números BYON. Contacta con soporte para aumentar tu límite.",
+  "Daily verification limit reached": "Límite de verificaciones diarias alcanzado",
+  "Daily verification limit reached. Try again in {{time}}.": "Límite de verificaciones diarias alcanzado. Inténtalo de nuevo en {{time}}.",
+  "Daily verification limit reached. Try again tomorrow.": "Límite de verificaciones diarias alcanzado. Inténtalo de nuevo mañana.",
+  "less than 1 hour": "menos de 1 hora",
+  "hours": "horas",
   "Your number is now active.": "Tu número está ahora activo.",
   "e.g. 8.8.8.8": "por. ej. 8.8.8.8"
 }

@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import ByonSuccess from './ByonSuccess';
 import OtpInput from './OtpInput';
 import PhoneInput, { isValidE164 } from './PhoneInput';
-import { ByonStep, InitiateResponse, VerifyResponse } from './types';
+import { ByonStep, InitiateResponse, ValidateResponse, VerifyResponse } from './types';
 import useByonApi from './useByonApi';
 
 interface ByonModalProps {
@@ -34,8 +34,10 @@ const ByonModal = (props: ByonModalProps): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [expiresIn, setExpiresIn] = useState(600);
   const [verifiedDdiId, setVerifiedDdiId] = useState<number | undefined>();
+  const [validation, setValidation] = useState<ValidateResponse | null>(null);
+  const [validationDebounce, setValidationDebounce] = useState<NodeJS.Timeout | null>(null);
 
-  const { initiate, verify, loading } = useByonApi();
+  const { initiate, verify, validate, validating, loading } = useByonApi();
 
   // Reset state when modal opens
   useEffect(() => {
@@ -46,8 +48,35 @@ const ByonModal = (props: ByonModalProps): JSX.Element => {
       setError(null);
       setExpiresIn(600);
       setVerifiedDdiId(undefined);
+      setValidation(null);
     }
   }, [open]);
+
+  // Validate phone number with debounce
+  useEffect(() => {
+    // Clear previous timeout
+    if (validationDebounce) {
+      clearTimeout(validationDebounce);
+    }
+
+    // Only validate if E.164 format is valid
+    if (!isValidE164(phoneNumber)) {
+      setValidation(null);
+      return;
+    }
+
+    // Debounce the validation call
+    const timeout = setTimeout(async () => {
+      const result = await validate(phoneNumber);
+      setValidation(result);
+    }, 500);
+
+    setValidationDebounce(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [phoneNumber, validate]);
 
   const handleSendCode = useCallback(async () => {
     if (!isValidE164(phoneNumber)) {
@@ -149,10 +178,10 @@ const ByonModal = (props: ByonModalProps): JSX.Element => {
             variant: 'outlined' as const,
           },
           {
-            label: _('Send Code'),
+            label: validating ? _('Checking...') : _('Send Code'),
             onClick: handleSendCode,
             variant: 'solid' as const,
-            disabled: !isValidE164(phoneNumber),
+            disabled: !isValidE164(phoneNumber) || validating || (validation !== null && !validation.valid),
           },
         ];
       case 'otp':
@@ -226,6 +255,41 @@ const ByonModal = (props: ByonModalProps): JSX.Element => {
                 error={error}
                 autoFocus
               />
+
+              {/* Validation feedback */}
+              {validating && (
+                <Box className="validation-feedback validating">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{_('Checking number...')}</Typography>
+                </Box>
+              )}
+
+              {!validating && validation && validation.valid && validation.country && (
+                <Box className="validation-feedback success">
+                  <Typography variant="body2" className="country-detected">
+                    ✓ {validation.country.name} ({validation.country.code})
+                  </Typography>
+                  <Typography variant="caption" className="national-number">
+                    {_('National number')}: {validation.nationalNumber}
+                  </Typography>
+                </Box>
+              )}
+
+              {!validating && validation && validation.valid && !validation.country && (
+                <Box className="validation-feedback warning">
+                  <Typography variant="body2">
+                    ⚠ {_('Country not detected - number will still work')}
+                  </Typography>
+                </Box>
+              )}
+
+              {!validating && validation && !validation.valid && (
+                <Box className="validation-feedback error">
+                  <Typography variant="body2" color="error">
+                    ✗ {validation.error}
+                  </Typography>
+                </Box>
+              )}
             </Box>
 
             <Alert severity="info" className="info-alert">
@@ -336,6 +400,47 @@ const StyledByonModalContent = styled(Box)(({ theme }) => ({
 
   '& .input-container': {
     marginBottom: theme.spacing(3),
+  },
+
+  '& .validation-feedback': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(1),
+    padding: theme.spacing(1, 1.5),
+    borderRadius: theme.shape.borderRadius,
+    fontSize: '0.875rem',
+
+    '&.validating': {
+      backgroundColor: theme.palette.action.hover,
+      color: theme.palette.text.secondary,
+    },
+
+    '&.success': {
+      backgroundColor: theme.palette.success.light + '20',
+      color: theme.palette.success.dark,
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: 0,
+    },
+
+    '&.warning': {
+      backgroundColor: theme.palette.warning.light + '20',
+      color: theme.palette.warning.dark,
+    },
+
+    '&.error': {
+      backgroundColor: theme.palette.error.light + '20',
+    },
+  },
+
+  '& .country-detected': {
+    fontWeight: 600,
+  },
+
+  '& .national-number': {
+    color: theme.palette.text.secondary,
+    marginTop: theme.spacing(0.5),
   },
 
   '& .info-alert': {

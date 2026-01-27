@@ -248,6 +248,87 @@ class ByonService implements ByonServiceInterface
     /**
      * @inheritDoc
      */
+    public function validate(CompanyInterface $company, string $phoneNumber): ByonValidateResult
+    {
+        $phoneNumber = trim($phoneNumber);
+
+        // Validation 1: E.164 format
+        if (!preg_match(self::E164_PATTERN, $phoneNumber)) {
+            return ByonValidateResult::error(
+                ByonException::INVALID_PHONE_FORMAT,
+                'Phone number must be in E.164 format (e.g., +34612345678)'
+            );
+        }
+
+        // Validation 2: Check for duplicates (platform-wide)
+        $existingDdi = $this->ddiRepository->findOneByDdiE164($phoneNumber);
+        if ($existingDdi !== null) {
+            $existingCompany = $existingDdi->getCompany();
+            $isSameCompany = $existingCompany !== null && $existingCompany->getId() === $company->getId();
+
+            if ($existingDdi->getIsByon()) {
+                if ($isSameCompany) {
+                    return ByonValidateResult::error(
+                        ByonException::DUPLICATE_NUMBER,
+                        'You already own this number as BYON'
+                    );
+                } else {
+                    return ByonValidateResult::error(
+                        ByonException::DUPLICATE_NUMBER,
+                        'This number is already registered by another account'
+                    );
+                }
+            } else {
+                return ByonValidateResult::error(
+                    ByonException::INVENTORY_NUMBER,
+                    'This number is part of our inventory and cannot be added as BYON'
+                );
+            }
+        }
+
+        // Validation 3: Check BYON limit
+        $byonCount = $this->countByonDdis($company->getId());
+        $byonLimit = $company->getByonMaxNumbers();
+        if ($byonCount >= $byonLimit) {
+            return ByonValidateResult::error(
+                ByonException::BYON_LIMIT_REACHED,
+                sprintf('Maximum BYON numbers reached (%d/%d)', $byonCount, $byonLimit)
+            );
+        }
+
+        // Detect country
+        $country = $this->detectCountry($phoneNumber);
+
+        if ($country === null) {
+            // Block unknown countries - cannot create DDI without country
+            return ByonValidateResult::error(
+                ByonException::COUNTRY_NOT_DETECTED,
+                'Country not detected - please use a valid country code'
+            );
+        }
+
+        // Extract national number
+        $countryPrefix = $country->getCountryCode();
+        $nationalNumber = $phoneNumber;
+        if (str_starts_with($phoneNumber, $countryPrefix)) {
+            $nationalNumber = substr($phoneNumber, strlen($countryPrefix));
+        }
+
+        // Get country name (multilingual field)
+        $countryName = $country->getName()?->getEn() ?? 'Unknown';
+
+        return ByonValidateResult::success(
+            countryName: $countryName,
+            countryCode: $countryPrefix,
+            countryId: $country->getId(),
+            nationalNumber: $nationalNumber,
+            e164Number: $phoneNumber
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function release(int $ddiId): void
     {
         $ddi = $this->ddiRepository->find($ddiId);
@@ -460,9 +541,10 @@ class ByonService implements ByonServiceInterface
         $country = $this->detectCountry($phoneNumber);
 
         // Get the DDI part (number without country prefix)
+        // Country code already includes '+' (e.g., '+30' for Greece)
         $ddiNumber = $phoneNumber;
         if ($country !== null) {
-            $countryPrefix = '+' . $country->getCountryCode();
+            $countryPrefix = $country->getCountryCode(); // Already includes '+'
             if (str_starts_with($phoneNumber, $countryPrefix)) {
                 $ddiNumber = substr($phoneNumber, strlen($countryPrefix));
             }
@@ -494,16 +576,19 @@ class ByonService implements ByonServiceInterface
     /**
      * Detect country from E.164 number
      *
+     * The Countries table stores countryCode WITH the '+' prefix (e.g., '+30' for Greece).
+     *
      * @return \Ivoz\Provider\Domain\Model\Country\CountryInterface|null
      */
     private function detectCountry(string $phoneNumber)
     {
-        // Remove leading +
+        // Remove leading + for digit extraction
         $number = ltrim($phoneNumber, '+');
 
         // Try country codes from longest to shortest (1-4 digits)
+        // Database stores countryCode WITH '+' prefix, so we add it back
         for ($len = 4; $len >= 1; $len--) {
-            $prefix = substr($number, 0, $len);
+            $prefix = '+' . substr($number, 0, $len);
             $country = $this->countryRepository->findOneBy(['countryCode' => $prefix]);
             if ($country !== null) {
                 return $country;

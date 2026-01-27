@@ -53,6 +53,35 @@ final class ByonStatus
     }
 
     /**
+     * Get the reason why BYON is disabled (or null if enabled)
+     */
+    public function getDisabledReason(): ?string
+    {
+        if ($this->byonCount >= $this->byonLimit) {
+            return 'BYON_LIMIT_REACHED';
+        }
+        if ($this->getDailyAttemptsRemaining() <= 0) {
+            return 'DAILY_LIMIT_REACHED';
+        }
+        return null;
+    }
+
+    /**
+     * Get when the daily limit will reset (midnight UTC next day)
+     * Returns ISO 8601 timestamp or null if not applicable
+     */
+    public function getDailyResetAt(): ?string
+    {
+        if ($this->getDailyAttemptsRemaining() > 0) {
+            return null; // Not needed if daily limit not reached
+        }
+
+        // Calculate midnight UTC tomorrow
+        $tomorrow = new \DateTime('tomorrow', new \DateTimeZone('UTC'));
+        return $tomorrow->format(\DateTime::ATOM);
+    }
+
+    /**
      * Convert to API response format
      */
     public function toArray(): array
@@ -63,6 +92,8 @@ final class ByonStatus
             'dailyAttemptsRemaining' => $this->getDailyAttemptsRemaining(),
             'dailyAttemptsLimit' => $this->dailyAttemptsLimit,
             'canAddByon' => $this->canAddByon(),
+            'disabledReason' => $this->getDisabledReason(),
+            'dailyResetAt' => $this->getDailyResetAt(),
         ];
     }
 }

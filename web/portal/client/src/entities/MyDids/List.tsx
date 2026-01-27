@@ -49,15 +49,13 @@ const List = (props: ListContentProps): JSX.Element => {
                 {_('Loading...')}
               </Typography>
             </Box>
-          ) : status ? (
+          ) : (
             <ByonButton
-              byonCount={status.byonCount}
-              byonLimit={status.byonLimit}
-              disabled={!status.canAddByon}
+              status={status}
               loading={loading}
               onClick={handleByonClick}
             />
-          ) : null}
+          )}
         </Box>
 
         {/* Info Banner */}

@@ -623,6 +623,12 @@
   "You can use it for inbound calls and as a caller ID for outbound calls.": "You can use it for inbound calls and as a caller ID for outbound calls.",
   "You can use regular expressions to define values this entry will match.": "You can use regular expressions to define values this entry will match.",
   "You have reached the maximum number of BYON numbers": "You have reached the maximum number of BYON numbers",
+  "You have reached the maximum of {{limit}} BYON numbers. Contact support to increase your limit.": "You have reached the maximum of {{limit}} BYON numbers. Contact support to increase your limit.",
+  "Daily verification limit reached": "Daily verification limit reached",
+  "Daily verification limit reached. Try again in {{time}}.": "Daily verification limit reached. Try again in {{time}}.",
+  "Daily verification limit reached. Try again tomorrow.": "Daily verification limit reached. Try again tomorrow.",
+  "less than 1 hour": "less than 1 hour",
+  "hours": "hours",
   "Your number is now active.": "Your number is now active.",
   "e.g. 8.8.8.8": "e.g. 8.8.8.8"
 }

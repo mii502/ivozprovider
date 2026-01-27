@@ -33,6 +33,7 @@ class ByonException extends \Exception
     public const INVALID_PHONE_FORMAT = 'INVALID_PHONE_FORMAT';
     public const DUPLICATE_NUMBER = 'DUPLICATE_NUMBER';
     public const INVENTORY_NUMBER = 'INVENTORY_NUMBER';
+    public const COUNTRY_NOT_DETECTED = 'COUNTRY_NOT_DETECTED';
 
     // Limit errors
     public const DAILY_LIMIT_EXCEEDED = 'DAILY_LIMIT_EXCEEDED';
@@ -81,6 +82,7 @@ class ByonException extends \Exception
             self::INVALID_PHONE_FORMAT,
             self::DUPLICATE_NUMBER,
             self::INVENTORY_NUMBER,
+            self::COUNTRY_NOT_DETECTED,
             self::DAILY_LIMIT_EXCEEDED,
             self::BYON_LIMIT_REACHED,
             self::INVALID_CODE,
@@ -112,6 +114,7 @@ class ByonException extends \Exception
             self::INVALID_PHONE_FORMAT => 400,       // Bad Request
             self::DUPLICATE_NUMBER => 409,           // Conflict
             self::INVENTORY_NUMBER => 409,           // Conflict
+            self::COUNTRY_NOT_DETECTED => 400,       // Bad Request
             self::DAILY_LIMIT_EXCEEDED => 429,       // Too Many Requests
             self::BYON_LIMIT_REACHED => 403,         // Forbidden
             self::MAX_ATTEMPTS => 429,               // Too Many Requests
