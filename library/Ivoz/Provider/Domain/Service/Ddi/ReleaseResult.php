@@ -61,6 +61,15 @@ final class ReleaseResult
         );
     }
 
+    public static function byonCannotRelease(): self
+    {
+        return new self(
+            success: false,
+            errorCode: 'byon_cannot_release',
+            errorMessage: 'BYON numbers cannot be released. Contact support for assistance.'
+        );
+    }
+
     public static function releaseFailed(string $message): self
     {
         return new self(

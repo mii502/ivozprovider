@@ -22,6 +22,7 @@ use Ivoz\Provider\Domain\Model\RetailAccount\RetailAccountDto;
 use Ivoz\Provider\Domain\Model\RoutingTag\RoutingTagDto;
 use Ivoz\Provider\Domain\Model\Locution\LocutionDto;
 use Ivoz\Provider\Domain\Model\Recording\RecordingDto;
+use Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationDto;
 
 /**
 * DdiDtoAbstract
@@ -206,6 +207,16 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
      */
     private $reservedUntil = null;
 
+    /**
+     * @var bool|null
+     */
+    private $isByon = false;
+
+    /**
+     * @var ByonVerificationDto | null
+     */
+    private $byonVerification = null;
+
     public function __construct(?int $id = null)
     {
         $this->setId($id);
@@ -254,7 +265,9 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
             'assignedAt' => 'assignedAt',
             'nextRenewalAt' => 'nextRenewalAt',
             'reservedForCompanyId' => 'reservedForCompany',
-            'reservedUntil' => 'reservedUntil'
+            'reservedUntil' => 'reservedUntil',
+            'isByon' => 'isByon',
+            'byonVerificationId' => 'byonVerification'
         ];
     }
 
@@ -298,7 +311,9 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
             'assignedAt' => $this->getAssignedAt(),
             'nextRenewalAt' => $this->getNextRenewalAt(),
             'reservedForCompany' => $this->getReservedForCompany(),
-            'reservedUntil' => $this->getReservedUntil()
+            'reservedUntil' => $this->getReservedUntil(),
+            'isByon' => $this->getIsByon(),
+            'byonVerification' => $this->getByonVerification()
         ];
 
         if (!$hideSensitiveData) {
@@ -1066,5 +1081,47 @@ abstract class DdiDtoAbstract implements DataTransferObjectInterface
     public function getReservedUntil(): \DateTimeInterface|string|null
     {
         return $this->reservedUntil;
+    }
+
+    public function setIsByon(bool $isByon): static
+    {
+        $this->isByon = $isByon;
+
+        return $this;
+    }
+
+    public function getIsByon(): ?bool
+    {
+        return $this->isByon;
+    }
+
+    public function setByonVerification(?ByonVerificationDto $byonVerification): static
+    {
+        $this->byonVerification = $byonVerification;
+
+        return $this;
+    }
+
+    public function getByonVerification(): ?ByonVerificationDto
+    {
+        return $this->byonVerification;
+    }
+
+    public function setByonVerificationId(?int $id): static
+    {
+        $value = !is_null($id)
+            ? new ByonVerificationDto($id)
+            : null;
+
+        return $this->setByonVerification($value);
+    }
+
+    public function getByonVerificationId(): ?int
+    {
+        if ($dto = $this->getByonVerification()) {
+            return $dto->getId();
+        }
+
+        return null;
     }
 }

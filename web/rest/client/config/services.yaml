@@ -11,6 +11,8 @@ parameters:
     #https://symfony.com/doc/current/console/request_context.html
     router.request_context.base_url: /api/client
     api_default_role: ROLE_COMPANY_ADMIN
+    # BYON defaults - fallback URL if SOMLENG_VERIFY_API_URL env is not set
+    somleng_verify_url_default: 'https://verify.cpaas.voip.ing'
 
 services:
     # default configuration for services in *this* file
@@ -166,6 +168,45 @@ services:
 
     Controller\DidRelease\:
         resource: '../src/Controller/DidRelease/*'
+        tags: ['controller.service_arguments']
+
+    ###############################
+    ## BYON Services
+    ###############################
+    # Somleng Verify API Client (uses native cURL for HTTP calls)
+    Ivoz\Provider\Domain\Service\Byon\SomlengVerifyClient:
+        autowire: true
+        autoconfigure: true
+        public: true
+        arguments:
+            $accountSid: '%env(string:SOMLENG_VERIFY_ACCOUNT_SID)%'
+            $authToken: '%env(string:SOMLENG_VERIFY_AUTH_TOKEN)%'
+            $serviceSid: '%env(string:SOMLENG_VERIFY_SERVICE_SID)%'
+            $verifyApiUrl: '%env(default:somleng_verify_url_default:SOMLENG_VERIFY_API_URL)%'
+
+    # BYON Verification Repository (Doctrine implementation)
+    Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationRepository:
+        alias: Ivoz\Provider\Infrastructure\Persistence\Doctrine\ByonVerificationDoctrineRepository
+        public: true
+
+    Ivoz\Provider\Infrastructure\Persistence\Doctrine\ByonVerificationDoctrineRepository:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    # BYON Service
+    Ivoz\Provider\Domain\Service\Byon\ByonService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Byon\ByonServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\Byon\ByonService
+        public: true
+
+    # BYON Controllers (to be created in Phase 3)
+    Controller\Byon\:
+        resource: '../src/Controller/Byon/*'
         tags: ['controller.service_arguments']
 
     #######################################

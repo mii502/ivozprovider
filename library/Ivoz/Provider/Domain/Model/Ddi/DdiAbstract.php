@@ -43,6 +43,8 @@ use Ivoz\Provider\Domain\Model\ConditionalRoute\ConditionalRoute;
 use Ivoz\Provider\Domain\Model\RetailAccount\RetailAccount;
 use Ivoz\Provider\Domain\Model\RoutingTag\RoutingTag;
 use Ivoz\Provider\Domain\Model\Locution\Locution;
+use Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationInterface;
+use Ivoz\Provider\Domain\Model\ByonVerification\ByonVerification;
 
 /**
 * DdiAbstract
@@ -234,6 +236,18 @@ abstract class DdiAbstract
     protected $reservedUntil = null;
 
     /**
+     * @var bool
+     * BYON: Whether this DDI was verified via BYON (Bring Your Own Number)
+     */
+    protected $isByon = false;
+
+    /**
+     * @var ?ByonVerificationInterface
+     * BYON: Link to the verification record that created this DDI
+     */
+    protected $byonVerification = null;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -356,7 +370,9 @@ abstract class DdiAbstract
             ->setAssignedAt($dto->getAssignedAt())
             ->setNextRenewalAt($dto->getNextRenewalAt())
             ->setReservedForCompany($fkTransformer->transform($dto->getReservedForCompany()))
-            ->setReservedUntil($dto->getReservedUntil());
+            ->setReservedUntil($dto->getReservedUntil())
+            ->setIsByon($dto->getIsByon() ?? false)
+            ->setByonVerification($fkTransformer->transform($dto->getByonVerification()));
 
         $self->initChangelog();
 
@@ -417,7 +433,9 @@ abstract class DdiAbstract
             ->setAssignedAt($dto->getAssignedAt())
             ->setNextRenewalAt($dto->getNextRenewalAt())
             ->setReservedForCompany($fkTransformer->transform($dto->getReservedForCompany()))
-            ->setReservedUntil($dto->getReservedUntil());
+            ->setReservedUntil($dto->getReservedUntil())
+            ->setIsByon($dto->getIsByon() ?? $this->isByon)
+            ->setByonVerification($fkTransformer->transform($dto->getByonVerification()));
 
         return $this;
     }
@@ -460,7 +478,9 @@ abstract class DdiAbstract
             ->setAssignedAt(self::getAssignedAt())
             ->setNextRenewalAt(self::getNextRenewalAt())
             ->setReservedForCompany(Company::entityToDto(self::getReservedForCompany(), $depth))
-            ->setReservedUntil(self::getReservedUntil());
+            ->setReservedUntil(self::getReservedUntil())
+            ->setIsByon(self::getIsByon())
+            ->setByonVerification(ByonVerification::entityToDto(self::getByonVerification(), $depth));
     }
 
     /**
@@ -501,7 +521,9 @@ abstract class DdiAbstract
             'assignedAt' => self::getAssignedAt(),
             'nextRenewalAt' => self::getNextRenewalAt(),
             'reservedForCompanyId' => self::getReservedForCompany()?->getId(),
-            'reservedUntil' => self::getReservedUntil()
+            'reservedUntil' => self::getReservedUntil(),
+            'isByon' => self::getIsByon(),
+            'byonVerificationId' => self::getByonVerification()?->getId()
         ];
     }
 
@@ -973,5 +995,29 @@ abstract class DdiAbstract
     public function getReservedUntil(): ?\DateTimeInterface
     {
         return $this->reservedUntil;
+    }
+
+    protected function setIsByon(bool $isByon): static
+    {
+        $this->isByon = $isByon;
+
+        return $this;
+    }
+
+    public function getIsByon(): bool
+    {
+        return $this->isByon;
+    }
+
+    protected function setByonVerification(?ByonVerificationInterface $byonVerification = null): static
+    {
+        $this->byonVerification = $byonVerification;
+
+        return $this;
+    }
+
+    public function getByonVerification(): ?ByonVerificationInterface
+    {
+        return $this->byonVerification;
     }
 }

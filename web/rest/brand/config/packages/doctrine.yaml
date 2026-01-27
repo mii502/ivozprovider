@@ -14,3 +14,9 @@ doctrine:
         # backtrace queries in profiler (increases memory usage per request)
         #profiling_collect_backtrace: '%kernel.debug%'
 
+    orm:
+        resolve_target_entities:
+            # BYON entity mapping
+            Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationInterface:
+                Ivoz\Provider\Domain\Model\ByonVerification\ByonVerification
+

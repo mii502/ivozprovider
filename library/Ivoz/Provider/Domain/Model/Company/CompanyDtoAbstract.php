@@ -278,6 +278,12 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
     private $enabled = true;
 
     /**
+     * @var int|null
+     * BYON: Maximum number of BYON DDIs allowed
+     */
+    private $byonMaxNumbers = 10;
+
+    /**
      * @var ExtensionDto[] | null
      */
     private $extensions = null;
@@ -410,7 +416,8 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'locationId' => 'location',
             'didRenewalAnchor' => 'didRenewalAnchor',
             'whmcsClientId' => 'whmcsClientId',
-            'enabled' => 'enabled'
+            'enabled' => 'enabled',
+            'byonMaxNumbers' => 'byonMaxNumbers'
         ];
     }
 
@@ -469,6 +476,7 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
             'didRenewalAnchor' => $this->getDidRenewalAnchor(),
             'whmcsClientId' => $this->getWhmcsClientId(),
             'enabled' => $this->getEnabled(),
+            'byonMaxNumbers' => $this->getByonMaxNumbers(),
             'extensions' => $this->getExtensions(),
             'ddis' => $this->getDdis(),
             'friends' => $this->getFriends(),
@@ -1406,6 +1414,18 @@ abstract class CompanyDtoAbstract implements DataTransferObjectInterface
     public function getEnabled(): ?bool
     {
         return $this->enabled;
+    }
+
+    public function setByonMaxNumbers(int $byonMaxNumbers): static
+    {
+        $this->byonMaxNumbers = $byonMaxNumbers;
+
+        return $this;
+    }
+
+    public function getByonMaxNumbers(): ?int
+    {
+        return $this->byonMaxNumbers;
     }
 
     /**

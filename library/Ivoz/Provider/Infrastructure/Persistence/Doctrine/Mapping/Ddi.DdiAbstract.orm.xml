@@ -166,5 +166,16 @@
       </join-columns>
     </many-to-one>
     <field name="reservedUntil" type="datetime" column="reservedUntil" nullable="true"/>
+    <field name="isByon" type="boolean" column="isByon" nullable="false">
+      <options>
+        <option name="default">0</option>
+        <option name="comment">BYON: Bring Your Own Number flag</option>
+      </options>
+    </field>
+    <many-to-one field="byonVerification" target-entity="Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationInterface" fetch="LAZY">
+      <join-columns>
+        <join-column name="byonVerificationId" referenced-column-name="id" on-delete="SET NULL" nullable="true"/>
+      </join-columns>
+    </many-to-one>
   </mapped-superclass>
 </doctrine-mapping>

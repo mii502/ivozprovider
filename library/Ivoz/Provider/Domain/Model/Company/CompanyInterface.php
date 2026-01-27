@@ -308,6 +308,8 @@ interface CompanyInterface extends LoggableEntityInterface
 
     public function getEnabled(): bool;
 
+    public function getByonMaxNumbers(): int;
+
     public function addExtension(ExtensionInterface $extension): CompanyInterface;
 
     public function removeExtension(ExtensionInterface $extension): CompanyInterface;

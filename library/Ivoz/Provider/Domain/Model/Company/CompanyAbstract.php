@@ -264,6 +264,12 @@ abstract class CompanyAbstract
     protected $enabled = true;
 
     /**
+     * @var int
+     * BYON: Maximum number of BYON (Bring Your Own Number) DDIs allowed
+     */
+    protected $byonMaxNumbers = 10;
+
+    /**
      * Constructor
      */
     protected function __construct(
@@ -435,7 +441,8 @@ abstract class CompanyAbstract
             ->setLocation($fkTransformer->transform($dto->getLocation()))
             ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
             ->setWhmcsClientId($dto->getWhmcsClientId())
-            ->setEnabled($dto->getEnabled() ?? true);
+            ->setEnabled($dto->getEnabled() ?? true)
+            ->setByonMaxNumbers($dto->getByonMaxNumbers() ?? 10);
 
         $self->initChangelog();
 
@@ -537,7 +544,8 @@ abstract class CompanyAbstract
             ->setLocation($fkTransformer->transform($dto->getLocation()))
             ->setDidRenewalAnchor($dto->getDidRenewalAnchor())
             ->setWhmcsClientId($dto->getWhmcsClientId())
-            ->setEnabled($dto->getEnabled() ?? $this->enabled);
+            ->setEnabled($dto->getEnabled() ?? $this->enabled)
+            ->setByonMaxNumbers($dto->getByonMaxNumbers() ?? $this->byonMaxNumbers);
 
         return $this;
     }
@@ -593,7 +601,8 @@ abstract class CompanyAbstract
             ->setLocation(Location::entityToDto(self::getLocation(), $depth))
             ->setDidRenewalAnchor(self::getDidRenewalAnchor())
             ->setWhmcsClientId(self::getWhmcsClientId())
-            ->setEnabled(self::getEnabled());
+            ->setEnabled(self::getEnabled())
+            ->setByonMaxNumbers(self::getByonMaxNumbers());
     }
 
     /**
@@ -647,7 +656,8 @@ abstract class CompanyAbstract
             'locationId' => self::getLocation()?->getId(),
             'didRenewalAnchor' => self::getDidRenewalAnchor(),
             'whmcsClientId' => self::getWhmcsClientId(),
-            'enabled' => self::getEnabled()
+            'enabled' => self::getEnabled(),
+            'byonMaxNumbers' => self::getByonMaxNumbers()
         ];
     }
 
@@ -1214,5 +1224,17 @@ abstract class CompanyAbstract
     public function getEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    protected function setByonMaxNumbers(int $byonMaxNumbers): static
+    {
+        $this->byonMaxNumbers = $byonMaxNumbers;
+
+        return $this;
+    }
+
+    public function getByonMaxNumbers(): int
+    {
+        return $this->byonMaxNumbers;
     }
 }

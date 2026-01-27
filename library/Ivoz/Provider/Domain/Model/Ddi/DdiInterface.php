@@ -27,6 +27,7 @@ use Ivoz\Provider\Domain\Model\Locution\LocutionInterface;
 use Ivoz\Provider\Domain\Model\Recording\RecordingInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Ivoz\Provider\Domain\Model\ByonVerification\ByonVerificationInterface as ByonVerificationEntityInterface;
 
 /**
 * DdiInterface
@@ -220,4 +221,8 @@ interface DdiInterface extends LoggableEntityInterface
      * @return null|string
      */
     public function getTarget(string $prefix = '');
+
+    public function getIsByon(): bool;
+
+    public function getByonVerification(): ?ByonVerificationEntityInterface;
 }

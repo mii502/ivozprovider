@@ -56,8 +56,10 @@ class DidInventoryService
             ->where('d.inventoryStatus = :status')
             ->andWhere('b.id = :brandId')
             ->andWhere('d.company IS NULL')  // Only unassigned DDIs
+            ->andWhere('d.isByon = :isByon')  // Exclude BYON DDIs from marketplace
             ->setParameter('status', DdiInterface::INVENTORYSTATUS_AVAILABLE)
-            ->setParameter('brandId', $brand->getId());
+            ->setParameter('brandId', $brand->getId())
+            ->setParameter('isByon', false);
 
         // Apply filters
         if (!empty($filters['country'])) {
@@ -142,8 +144,10 @@ class DidInventoryService
             ->where('d.inventoryStatus = :status')
             ->andWhere('b.id = :brandId')
             ->andWhere('d.company IS NULL')
+            ->andWhere('d.isByon = :isByon')  // Exclude BYON DDIs
             ->setParameter('status', DdiInterface::INVENTORYSTATUS_AVAILABLE)
             ->setParameter('brandId', $brand->getId())
+            ->setParameter('isByon', false)
             ->groupBy('c.id')
             ->having('COUNT(d.id) > 0')
             ->orderBy('c.name->' . "'en'", 'ASC');
@@ -181,9 +185,11 @@ class DidInventoryService
             ->andWhere('d.inventoryStatus = :status')
             ->andWhere('b.id = :brandId')
             ->andWhere('d.company IS NULL')
+            ->andWhere('d.isByon = :isByon')  // Exclude BYON DDIs
             ->setParameter('id', $ddiId)
             ->setParameter('status', DdiInterface::INVENTORYSTATUS_AVAILABLE)
-            ->setParameter('brandId', $brand->getId());
+            ->setParameter('brandId', $brand->getId())
+            ->setParameter('isByon', false);
 
         $result = $qb->getQuery()->getOneOrNullResult();
 
@@ -206,8 +212,10 @@ class DidInventoryService
             ->where('d.inventoryStatus = :status')
             ->andWhere('b.id = :brandId')
             ->andWhere('d.company IS NULL')
+            ->andWhere('d.isByon = :isByon')  // Exclude BYON DDIs
             ->setParameter('status', DdiInterface::INVENTORYSTATUS_AVAILABLE)
             ->setParameter('brandId', $brand->getId())
+            ->setParameter('isByon', false)
             ->groupBy('d.type')
             ->having('COUNT(d.id) > 0')
             ->orderBy('d.type', 'ASC');
@@ -243,8 +251,10 @@ class DidInventoryService
             ->where('d.inventoryStatus = :status')
             ->andWhere('b.id = :brandId')
             ->andWhere('d.company IS NULL')
+            ->andWhere('d.isByon = :isByon')  // Exclude BYON DDIs
             ->setParameter('status', DdiInterface::INVENTORYSTATUS_AVAILABLE)
-            ->setParameter('brandId', $brand->getId());
+            ->setParameter('brandId', $brand->getId())
+            ->setParameter('isByon', false);
 
         $result = $qb->getQuery()->getSingleResult();
 

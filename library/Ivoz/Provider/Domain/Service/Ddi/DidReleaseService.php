@@ -58,7 +58,17 @@ class DidReleaseService implements DidReleaseServiceInterface
             return ReleaseResult::ddiNotOwned();
         }
 
-        // 2. Validate status
+        // 2. Block BYON release (customer cannot release - only brand admin)
+        if ($ddi->getIsByon()) {
+            $this->logger->warning('DID release rejected: BYON DDI cannot be released by customer', [
+                'ddi_id' => $ddi->getId(),
+                'ddi_number' => $ddi->getDdie164(),
+                'company_id' => $company->getId(),
+            ]);
+            return ReleaseResult::byonCannotRelease();
+        }
+
+        // 3. Validate status
         if ($ddi->getInventoryStatus() !== DdiInterface::INVENTORYSTATUS_ASSIGNED) {
             $this->logger->warning('DID release rejected: not assigned', [
                 'ddi_id' => $ddi->getId(),
@@ -68,19 +78,19 @@ class DidReleaseService implements DidReleaseServiceInterface
             return ReleaseResult::ddiNotAssigned();
         }
 
-        // 3. Capture data before UnlinkDdi (it deletes the entity)
+        // 4. Capture data before UnlinkDdi (it deletes the entity)
         $setupPrice = $ddi->getSetupPrice();
         $monthlyPrice = $ddi->getMonthlyPrice();
         $ddiNumber = $ddi->getDdie164();
         $oldDdiId = $ddi->getId();
 
         try {
-            // 4. Execute UnlinkDdi (deletes DDI, creates new with no company)
+            // 5. Execute UnlinkDdi (deletes DDI, creates new with no company)
             // Invoice.ddiId FK will become NULL (ON DELETE SET NULL)
             // Invoice.ddiE164 remains intact for historical reference
             $newDdi = $this->unlinkDdiService->execute($ddi);
 
-            // 5. Set inventory fields on new DDI
+            // 6. Set inventory fields on new DDI
             $newDdiDto = $newDdi->toDto();
             $newDdiDto
                 ->setInventoryStatus(DdiInterface::INVENTORYSTATUS_AVAILABLE)
@@ -90,7 +100,7 @@ class DidReleaseService implements DidReleaseServiceInterface
                 ->setMonthlyPrice($monthlyPrice);
             $this->entityTools->persistDto($newDdiDto, $newDdi, true);
 
-            // 6. Log the release
+            // 7. Log the release
             $this->logger->info('Customer released DID voluntarily', [
                 'old_ddi_id' => $oldDdiId,
                 'new_ddi_id' => $newDdi->getId(),
@@ -119,6 +129,11 @@ class DidReleaseService implements DidReleaseServiceInterface
         // Must be owned by this company
         $ddiCompany = $ddi->getCompany();
         if ($ddiCompany === null || $ddiCompany->getId() !== $company->getId()) {
+            return false;
+        }
+
+        // BYON DDIs cannot be released by customer (only brand admin)
+        if ($ddi->getIsByon()) {
             return false;
         }
 

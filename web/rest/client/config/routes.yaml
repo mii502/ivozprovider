@@ -368,6 +368,34 @@ post_dids_release:
     _api_receive: false
 
 ###############################
+## BYON Routes
+###############################
+
+# Initiate BYON verification (send OTP)
+post_byon_initiate:
+  path: '/byon/initiate'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Byon\InitiateAction
+    _api_receive: false
+
+# Verify BYON code and create DDI
+post_byon_verify:
+  path: '/byon/verify'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Byon\VerifyAction
+    _api_receive: false
+
+# Get BYON status (limits and usage)
+get_byon_status:
+  path: '/byon/status'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\Byon\GetStatusAction
+    _api_receive: false
+
+###############################
 ## WebRTC Credentials Routes
 ###############################
 
