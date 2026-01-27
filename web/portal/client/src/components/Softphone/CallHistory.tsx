@@ -3,6 +3,10 @@
  * Server path: /opt/irontec/ivozprovider/web/portal/client/src/components/Softphone/CallHistory.tsx
  * Server: vm-ivozprovider-lab (185.16.41.36)
  * Last updated: 2026-01-27
+ *
+ * Supports both retail/wholesale (/billable_calls) and vPBX (/users_cdrs) portals:
+ * - Retail/Wholesale: Uses BillableCall entity (no disposition field, all calls assumed answered)
+ * - vPBX: Uses UsersCdr entity (has disposition field: answered/missed/busy/error)
  */
 
 import useCancelToken from '@irontec/ivoz-ui/hooks/useCancelToken';
@@ -25,8 +29,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { useStoreActions } from 'store';
+import { useStoreActions, useStoreState } from 'store';
 
+// Unified call record interface supporting both BillableCall and UsersCdr
 interface CallRecord {
   id: number;
   startTime: string;
@@ -34,7 +39,7 @@ interface CallRecord {
   direction: 'inbound' | 'outbound';
   caller: string;
   callee: string;
-  disposition: 'answered' | 'missed' | 'busy' | 'error';
+  disposition: 'answered' | 'missed' | 'busy' | 'error'; // Derived for BillableCall
 }
 
 interface CallHistoryProps {
@@ -143,7 +148,14 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
   const [error, setError] = useState<string | null>(null);
 
   const apiGet = useStoreActions((store) => store.api.get);
+  const profile = useStoreState((store) => store.clientSession.aboutMe.profile);
   const [, cancelToken] = useCancelToken();
+
+  // Determine which API endpoint to use based on portal type
+  // - Retail/Wholesale clients: /billable_calls (BillableCall entity)
+  // - vPBX users: /users_cdrs (UsersCdr entity)
+  const isVpbxUser = profile?.vpbx === true;
+  const apiPath = isVpbxUser ? '/users_cdrs' : '/billable_calls';
 
   const fetchCallHistory = useCallback(async () => {
     try {
@@ -151,7 +163,7 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
       setError(null);
 
       await apiGet({
-        path: '/users_cdrs',
+        path: apiPath,
         params: {
           _itemsPerPage: 50,
           _order: { startTime: 'DESC' },
@@ -159,7 +171,40 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
         cancelToken,
         successCallback: async (response: unknown) => {
           if (Array.isArray(response)) {
-            setCalls(response as CallRecord[]);
+            // Transform response to unified CallRecord format
+            const records = (response as Array<Record<string, unknown>>).map((item) => {
+              // BillableCall doesn't have disposition - derive it from duration
+              // If duration is 0 or very low, treat as missed
+              const duration = item.duration as number | string;
+              let durationSeconds = 0;
+              if (typeof duration === 'string') {
+                const parts = duration.split(':').map(Number);
+                if (parts.length === 3) {
+                  durationSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                } else if (parts.length === 2) {
+                  durationSeconds = parts[0] * 60 + parts[1];
+                } else {
+                  durationSeconds = parseInt(duration, 10) || 0;
+                }
+              } else if (typeof duration === 'number') {
+                durationSeconds = duration;
+              }
+
+              // Use disposition if available (UsersCdr), otherwise derive from duration
+              const disposition = (item.disposition as string) ||
+                (durationSeconds <= 1 ? 'missed' : 'answered');
+
+              return {
+                id: item.id as number,
+                startTime: item.startTime as string,
+                duration: item.duration as number | string,
+                direction: item.direction as 'inbound' | 'outbound',
+                caller: item.caller as string,
+                callee: item.callee as string,
+                disposition: disposition as 'answered' | 'missed' | 'busy' | 'error',
+              };
+            });
+            setCalls(records);
           }
           setLoading(false);
         },
@@ -168,7 +213,7 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
       setError('Failed to load call history');
       setLoading(false);
     }
-  }, [apiGet, cancelToken]);
+  }, [apiGet, apiPath, cancelToken]);
 
   useEffect(() => {
     fetchCallHistory();
@@ -210,9 +255,12 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
     return formatDuration(call.duration);
   };
 
+  // Fixed height to match Keypad view (NumberDisplay ~60px + DialPad ~300px + CallButton ~80px)
+  const containerMinHeight = 440;
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: containerMinHeight }}>
         <CircularProgress size={32} />
       </Box>
     );
@@ -220,7 +268,7 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
 
   if (error) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
+      <Box sx={{ p: 3, textAlign: 'center', minHeight: containerMinHeight, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <Typography color="error" sx={{ mb: 2 }}>
           {error}
         </Typography>
@@ -233,14 +281,14 @@ const CallHistory = ({ onRedial, disabled = false }: CallHistoryProps): JSX.Elem
 
   if (calls.length === 0) {
     return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
+      <Box sx={{ p: 4, textAlign: 'center', minHeight: containerMinHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography color="text.secondary">{_('No call history')}</Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ flex: 1, overflow: 'auto', maxHeight: 400 }}>
+    <Box sx={{ flex: 1, overflow: 'auto', minHeight: containerMinHeight, maxHeight: 440 }}>
       <List disablePadding>
         {groupedCalls.map((group, groupIndex) => (
           <Box key={group.label}>
