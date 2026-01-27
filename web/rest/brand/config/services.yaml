@@ -132,6 +132,32 @@ services:
         autoconfigure: true
         tags: ['console.command']
 
+    ###############################
+    ## BYON (Bring Your Own Number) Services
+    ###############################
+    Controller\Byon\:
+        resource: '../src/Controller/Byon/*'
+        tags: ['controller.service_arguments']
+
+    Ivoz\Provider\Domain\Service\Byon\SomlengVerifyClient:
+        arguments:
+            $accountSid: '%env(SOMLENG_VERIFY_ACCOUNT_SID)%'
+            $authToken: '%env(SOMLENG_VERIFY_AUTH_TOKEN)%'
+            $serviceSid: '%env(SOMLENG_VERIFY_SERVICE_SID)%'
+            $verifyApiUrl: '%env(default::SOMLENG_VERIFY_API_URL)%'
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Byon\ByonService:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Ivoz\Provider\Domain\Service\Byon\ByonServiceInterface:
+        alias: Ivoz\Provider\Domain\Service\Byon\ByonService
+        public: true
+
 when@test:
     services:
         _defaults:

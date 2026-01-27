@@ -329,3 +329,33 @@ post_did_order_reject:
     _api_receive: false
   requirements:
     id: '\d+'
+
+###############################
+## BYON (Bring Your Own Number) Routes
+###############################
+
+# List all BYON DDIs in brand
+get_byon_ddis:
+  path: '/byon/ddis'
+  methods: ['GET']
+  defaults:
+    _controller: Controller\Byon\GetByonDdisAction
+    _api_receive: false
+
+# Release a BYON DDI
+post_byon_release:
+  path: '/byon/release'
+  methods: ['POST']
+  defaults:
+    _controller: Controller\Byon\ReleaseByonAction
+    _api_receive: false
+
+# Update company BYON limit
+put_company_byon_limit:
+  path: '/companies/{id}/byon-limit'
+  methods: ['PUT']
+  defaults:
+    _controller: Controller\Byon\UpdateByonLimitAction
+    _api_receive: false
+  requirements:
+    id: '\d+'
