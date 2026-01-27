@@ -43,10 +43,20 @@ interface WebRtcCredentials {
   turnServers: { urls: string; username: string; credential: string }[];
 }
 
+interface RemoteIdentity {
+  number: string;
+  displayName?: string;
+}
+
 interface UseJsSipClientReturn {
   registrationState: 'unregistered' | 'registering' | 'registered' | 'error';
   callState: 'idle' | 'calling' | 'ringing' | 'active' | 'held';
   error: string | null;
+  remoteIdentity: RemoteIdentity | null;
+  isMuted: boolean;
+  isSpeakerMuted: boolean;
+  speakerVolume: number;
+  currentDestination: string;
   register: (credentials: WebRtcCredentials) => void;
   unregister: () => void;
   call: (destination: string) => void;
@@ -56,6 +66,9 @@ interface UseJsSipClientReturn {
   unhold: () => void;
   mute: () => void;
   unmute: () => void;
+  toggleMute: () => void;
+  setSpeakerVolume: (volume: number) => void;
+  toggleSpeakerMute: () => void;
   sendDtmf: (digit: string) => void;
 }
 
@@ -76,6 +89,11 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
   const [registrationState, setRegistrationState] = useState<'unregistered' | 'registering' | 'registered' | 'error'>('unregistered');
   const [callState, setCallState] = useState<'idle' | 'calling' | 'ringing' | 'active' | 'held'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [remoteIdentity, setRemoteIdentity] = useState<RemoteIdentity | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
+  const [speakerVolume, setSpeakerVolumeState] = useState(1);
+  const [currentDestination, setCurrentDestination] = useState('');
 
   // Create audio element for remote audio
   useEffect(() => {
@@ -117,8 +135,11 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
     });
 
     session.on('progress', (e: { originator?: string; response?: unknown }) => {
-      logWithTime('Ringing');
-      setCallState('calling');
+      // Only set 'calling' for outbound calls - don't override 'ringing' for incoming
+      if (session.direction === 'outgoing') {
+        logWithTime('Remote party ringing');
+        setCallState('calling');
+      }
     });
 
     session.on('accepted', (e: { originator?: string }) => {
@@ -140,6 +161,9 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
       setCallState('idle');
       sessionRef.current = null;
       callStartTimeRef.current = null;
+      setRemoteIdentity(null);
+      setCurrentDestination('');
+      setIsMuted(false);
     });
 
     session.on('failed', (e: { originator?: string; cause?: string; message?: { status_code?: number } }) => {
@@ -148,6 +172,9 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
       setError(e.cause || 'Call failed');
       sessionRef.current = null;
       callStartTimeRef.current = null;
+      setRemoteIdentity(null);
+      setCurrentDestination('');
+      setIsMuted(false);
     });
 
     session.on('getusermediafailed', (e: DOMException) => {
@@ -156,6 +183,8 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
       setError(`Microphone access denied: ${e.message}`);
       sessionRef.current = null;
       callStartTimeRef.current = null;
+      setRemoteIdentity(null);
+      setCurrentDestination('');
     });
 
     session.on('hold', () => {
@@ -164,6 +193,14 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
 
     session.on('unhold', () => {
       setCallState('active');
+    });
+
+    session.on('muted', () => {
+      setIsMuted(true);
+    });
+
+    session.on('unmuted', () => {
+      setIsMuted(false);
     });
   }, []);
 
@@ -219,11 +256,21 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
         const session = e.session;
 
         if (session.direction === 'incoming') {
+          // Extract caller ID from remote_identity
+          const remoteUri = session.remote_identity?.uri;
+          const callerNumber = remoteUri?.user || 'Unknown';
+          const callerDisplayName = session.remote_identity?.display_name || undefined;
+
+          logWithTime(`Incoming call from: ${callerNumber}${callerDisplayName ? ` (${callerDisplayName})` : ''}`);
+
+          setRemoteIdentity({
+            number: callerNumber,
+            displayName: callerDisplayName,
+          });
+          setCurrentDestination(callerNumber);
           setCallState('ringing');
           sessionRef.current = session;
           setupSessionHandlers(session);
-
-          // For MVP, auto-setup handlers; UI will call answer() or hangup()
         }
       });
 
@@ -248,6 +295,7 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
       return;
     }
 
+    setCurrentDestination(destination);
     callStartTimeRef.current = Date.now();
     logWithTime(`Calling ${destination}`);
 
@@ -408,6 +456,9 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
     sessionRef.current?.terminate();
     sessionRef.current = null;
     setCallState('idle');
+    setRemoteIdentity(null);
+    setCurrentDestination('');
+    setIsMuted(false);
   }, []);
 
   const answer = useCallback(() => {
@@ -439,11 +490,44 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
 
   const mute = useCallback(() => {
     sessionRef.current?.mute();
+    setIsMuted(true);
   }, []);
 
   const unmute = useCallback(() => {
     sessionRef.current?.unmute();
+    setIsMuted(false);
   }, []);
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      unmute();
+    } else {
+      mute();
+    }
+  }, [isMuted, mute, unmute]);
+
+  const setSpeakerVolume = useCallback((volume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    setSpeakerVolumeState(clampedVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = clampedVolume;
+    }
+    // If setting volume > 0, unmute speaker
+    if (clampedVolume > 0 && isSpeakerMuted) {
+      setIsSpeakerMuted(false);
+      if (audioRef.current) {
+        audioRef.current.muted = false;
+      }
+    }
+  }, [isSpeakerMuted]);
+
+  const toggleSpeakerMute = useCallback(() => {
+    const newMuted = !isSpeakerMuted;
+    setIsSpeakerMuted(newMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = newMuted;
+    }
+  }, [isSpeakerMuted]);
 
   const sendDtmf = useCallback((digit: string) => {
     sessionRef.current?.sendDTMF(digit);
@@ -453,6 +537,11 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
     registrationState,
     callState,
     error,
+    remoteIdentity,
+    isMuted,
+    isSpeakerMuted,
+    speakerVolume,
+    currentDestination,
     register,
     unregister,
     call,
@@ -462,6 +551,9 @@ export const useJsSipClient = (): UseJsSipClientReturn => {
     unhold,
     mute,
     unmute,
+    toggleMute,
+    setSpeakerVolume,
+    toggleSpeakerMute,
     sendDtmf
   };
 };

@@ -1,38 +1,41 @@
 /**
- * WebRTC Softphone Component - Browser-based SIP calling for Retail clients
+ * WebRTC Softphone Component - Modern phone-like UI for Retail clients
  * Server path: /opt/irontec/ivozprovider/web/portal/client/src/components/Softphone/index.tsx
  * Server: vm-ivozprovider-lab (185.16.41.36)
- * Last updated: 2026-01-26
+ * Last updated: 2026-01-27
  */
 
 import useCancelToken from '@irontec/ivoz-ui/hooks/useCancelToken';
 import _ from '@irontec/ivoz-ui/services/translations/translate';
-import CallEndIcon from '@mui/icons-material/CallEnd';
+import CloseIcon from '@mui/icons-material/Close';
+import DialpadIcon from '@mui/icons-material/Dialpad';
+import HistoryIcon from '@mui/icons-material/History';
 import PhoneIcon from '@mui/icons-material/Phone';
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import {
   Badge,
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogContent,
-  DialogTitle,
+  ClickAwayListener,
   Fab,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  TextField,
-  Tooltip,
+  Paper,
+  Slide,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStoreActions } from 'store';
 
 import { useJsSipClient } from '../../hooks/useJsSipClient';
+import CallButton from './CallButton';
+import CallHistory from './CallHistory';
+import DialPad from './DialPad';
+import InCallView from './InCallView';
+import IncomingCall from './IncomingCall';
+import NumberDisplay from './NumberDisplay';
+import StatusBar from './StatusBar';
 
 const STORAGE_KEY = 'softphone_last_account';
 
@@ -59,21 +62,33 @@ const Softphone = (): JSX.Element | null => {
   const [retailAccounts, setRetailAccounts] = useState<RetailAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'keypad' | 'history'>('keypad');
 
   // Track if we've already attempted auto-registration for this account selection
   const autoRegisterAttemptedRef = useRef<number | null>(null);
   // Track if user manually disconnected (prevents auto-reconnect)
   const [manuallyDisconnected, setManuallyDisconnected] = useState(false);
+  // Ref for FAB to exclude from ClickAwayListener
+  const fabRef = useRef<HTMLDivElement>(null);
 
   const {
     registrationState,
     callState,
     error: sipError,
+    remoteIdentity,
+    isMuted,
+    isSpeakerMuted,
+    speakerVolume,
+    currentDestination,
     register,
     unregister,
     call,
     hangup,
     answer,
+    toggleMute,
+    setSpeakerVolume,
+    toggleSpeakerMute,
+    sendDtmf,
   } = useJsSipClient();
 
   const apiGet = useStoreActions((store) => store.api.get);
@@ -97,7 +112,7 @@ const Softphone = (): JSX.Element | null => {
     }
   }, [selectedAccount]);
 
-  // Fetch retail accounts when dialog opens (only once)
+  // Fetch retail accounts when panel opens (only once)
   useEffect(() => {
     if (open && retailAccounts.length === 0) {
       fetchRetailAccounts();
@@ -120,7 +135,7 @@ const Softphone = (): JSX.Element | null => {
     if (manuallyDisconnected) return;
     // Skip if accounts haven't loaded yet
     if (retailAccounts.length === 0) return;
-    // Skip if dialog not open (first load)
+    // Skip if panel not open (first load)
     if (!open) return;
 
     // Verify selected account exists in the list
@@ -146,6 +161,13 @@ const Softphone = (): JSX.Element | null => {
       }
     };
   }, [registrationState, unregister]);
+
+  // Auto-open panel on incoming call
+  useEffect(() => {
+    if (callState === 'ringing' && !open) {
+      setOpen(true);
+    }
+  }, [callState, open]);
 
   const fetchRetailAccounts = async () => {
     try {
@@ -213,6 +235,7 @@ const Softphone = (): JSX.Element | null => {
   const handleCall = useCallback(() => {
     if (destination) {
       call(destination);
+      // Don't clear destination - keep it for redial
     }
   }, [destination, call]);
 
@@ -225,15 +248,20 @@ const Softphone = (): JSX.Element | null => {
   }, [answer]);
 
   const handleClose = useCallback(() => {
+    // Don't close during active calls
+    if (callState !== 'idle' && callState !== 'ringing') return;
     setOpen(false);
-  }, []);
+  }, [callState]);
 
-  const handleAccountChange = (event: SelectChangeEvent<number | ''>) => {
-    const value = event.target.value;
-    const newAccountId = value === '' ? '' : Number(value);
+  const handleAccountChange = (accountId: number | '') => {
+    const newAccountId = accountId;
 
     // If changing to a different account while registered, unregister first
-    if (newAccountId !== '' && newAccountId !== selectedAccount && registrationState === 'registered') {
+    if (
+      newAccountId !== '' &&
+      newAccountId !== selectedAccount &&
+      registrationState === 'registered'
+    ) {
       unregister();
     }
 
@@ -251,46 +279,36 @@ const Softphone = (): JSX.Element | null => {
     unregister();
   }, [unregister]);
 
-  const getStatusColor = () => {
-    switch (registrationState) {
-      case 'registered':
-        return 'success.main';
-      case 'registering':
-        return 'warning.main';
-      case 'error':
-        return 'error.main';
-      default:
-        return 'grey.500';
+  const handleConnect = useCallback(() => {
+    if (selectedAccount !== '') {
+      setManuallyDisconnected(false);
+      autoRegisterAttemptedRef.current = null;
+      doRegister(selectedAccount as number);
     }
-  };
+  }, [selectedAccount, doRegister]);
 
-  const getStatusText = () => {
-    switch (registrationState) {
-      case 'registered':
-        return _('Registered');
-      case 'registering':
-        return _('Registering...');
-      case 'error':
-        return _('Registration Failed');
-      default:
-        return _('Not Registered');
-    }
-  };
+  const handleDigit = useCallback((digit: string) => {
+    setDestination((prev) => prev + digit);
+  }, []);
 
-  const getCallStateText = () => {
-    switch (callState) {
-      case 'calling':
-        return _('Calling...');
-      case 'ringing':
-        return _('Incoming Call');
-      case 'active':
-        return _('On Call');
-      case 'held':
-        return _('On Hold');
-      default:
-        return '';
-    }
-  };
+  const handleBackspace = useCallback(() => {
+    setDestination((prev) => prev.slice(0, -1));
+  }, []);
+
+  const handleRedial = useCallback(
+    (number: string) => {
+      setDestination(number);
+      setActiveTab('keypad');
+    },
+    []
+  );
+
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: 'keypad' | 'history') => {
+      setActiveTab(newValue);
+    },
+    []
+  );
 
   const error = fetchError || sipError;
 
@@ -298,254 +316,295 @@ const Softphone = (): JSX.Element | null => {
   const fabBadgeColor = registrationState === 'registered' ? 'success' : 'default';
   const showBadge = registrationState === 'registered' || callState !== 'idle';
 
+  // Determine which view to show
+  const isInCall = callState === 'calling' || callState === 'active' || callState === 'held';
+  const isRinging = callState === 'ringing';
+  const isIdle = callState === 'idle';
+
+  // Can close if idle or ringing (to decline without interaction)
+  const canClose = isIdle;
+
+  // Handle click away - exclude clicks on the FAB
+  const handleClickAway = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      // Don't close if click was on the FAB
+      if (fabRef.current && fabRef.current.contains(event.target as Node)) {
+        return;
+      }
+      if (canClose && open) {
+        handleClose();
+      }
+    },
+    [canClose, open, handleClose]
+  );
+
   return (
     <>
       {/* Floating Action Button with status badge */}
-      <Badge
-        color={callState !== 'idle' ? 'error' : fabBadgeColor}
-        variant="dot"
-        invisible={!showBadge}
-        overlap="circular"
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1000,
+      <Box ref={fabRef} sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1300 }}>
+        <Badge
+          color={callState !== 'idle' ? 'error' : fabBadgeColor}
+          variant="dot"
+          invisible={!showBadge}
+          overlap="circular"
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{
           '& .MuiBadge-badge': {
             width: 14,
             height: 14,
             borderRadius: '50%',
             border: '2px solid white',
+            // Pulse animation for incoming calls
+            ...(isRinging && {
+              animation: 'pulse-badge 1s infinite',
+              '@keyframes pulse-badge': {
+                '0%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.3)' },
+                '100%': { transform: 'scale(1)' },
+              },
+            }),
           },
         }}
       >
         <Fab
-          color="primary"
+          color={isRinging ? 'error' : 'primary'}
           onClick={() => setOpen(true)}
           aria-label={_('Open Softphone')}
+          sx={{
+            // Shake animation for incoming calls
+            ...(isRinging && {
+              animation: 'shake 0.5s infinite',
+              '@keyframes shake': {
+                '0%, 100%': { transform: 'rotate(0deg)' },
+                '25%': { transform: 'rotate(-10deg)' },
+                '75%': { transform: 'rotate(10deg)' },
+              },
+            }),
+          }}
         >
           <PhoneIcon />
         </Fab>
       </Badge>
+      </Box>
 
-      {/* Softphone Dialog */}
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: { minHeight: 350 },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          {_('WebRTC Phone')}
-          {/* Disconnect button in header - only show when registered */}
-          {registrationState === 'registered' && callState === 'idle' && (
-            <Tooltip title={_('Disconnect')}>
-              <IconButton
-                size="small"
-                onClick={handleDisconnect}
-                sx={{ color: 'text.secondary' }}
-              >
-                <PowerSettingsNewIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            {/* Account Selector - always allow changing */}
-            {retailAccounts.length > 1 && (
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="account-select-label">
-                  {_('Account')}
-                </InputLabel>
-                <Select
-                  labelId="account-select-label"
-                  value={selectedAccount}
-                  onChange={handleAccountChange}
-                  label={_('Account')}
-                  disabled={callState !== 'idle'}
+      {/* Softphone Floating Panel */}
+      <ClickAwayListener onClickAway={handleClickAway}>
+        <Slide direction="up" in={open} mountOnEnter unmountOnExit>
+          <Paper
+            elevation={12}
+            sx={{
+              position: 'fixed',
+              bottom: 96,
+              right: 24,
+              width: 320,
+              maxHeight: 'calc(100vh - 120px)',
+              borderRadius: 4,
+              overflow: 'hidden',
+              zIndex: 1200,
+              display: 'flex',
+              flexDirection: 'column',
+              bgcolor: 'background.paper',
+            }}
+          >
+            {/* Header */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                px: 2,
+                py: 1,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {_('Phone')}
+              </Typography>
+              {canClose && (
+                <IconButton
+                  size="small"
+                  onClick={handleClose}
+                  sx={{ color: 'inherit', opacity: 0.8, '&:hover': { opacity: 1 } }}
                 >
-                  {retailAccounts.map((acc) => (
-                    <MenuItem key={acc.id} value={acc.id}>
-                      {acc.description || acc.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
 
-            {/* Loading State */}
-            {loading && retailAccounts.length === 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <CircularProgress />
-              </Box>
-            )}
+            {/* Status Bar */}
+            <StatusBar
+              registrationState={registrationState}
+              accounts={retailAccounts}
+              selectedAccount={selectedAccount}
+              onAccountChange={handleAccountChange}
+              onDisconnect={handleDisconnect}
+              onConnect={handleConnect}
+              disabled={!isIdle || loading}
+            />
 
-            {/* Registration Status */}
-            {!loading && retailAccounts.length > 0 && (
-              <>
-                <Box
-                  sx={{
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      bgcolor: getStatusColor(),
-                    }}
-                  />
-                  <Typography variant="body2">{getStatusText()}</Typography>
+            {/* Content Area */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {/* Loading State */}
+              {loading && retailAccounts.length === 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress />
                 </Box>
+              )}
 
-                {/* Registering state - show spinner */}
-                {registrationState === 'registering' && (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                    <CircularProgress size={32} />
+              {/* No Accounts Message */}
+              {!loading && retailAccounts.length === 0 && !fetchError && (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography color="text.secondary">
+                    {_('No retail accounts found')}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Registering state */}
+              {registrationState === 'registering' && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                  <CircularProgress />
+                </Box>
+              )}
+
+              {/* Not registered - prompt to select account */}
+              {registrationState === 'unregistered' &&
+                retailAccounts.length > 0 &&
+                !loading &&
+                !manuallyDisconnected &&
+                autoRegisterAttemptedRef.current !== selectedAccount && (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">
+                      {selectedAccount === ''
+                        ? _('Select an account to connect')
+                        : _('Connecting...')}
+                    </Typography>
                   </Box>
                 )}
 
-                {/* Not registered - prompt to select account if multiple */}
-                {registrationState === 'unregistered' &&
-                  retailAccounts.length > 1 &&
-                  selectedAccount === '' && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center', py: 2 }}
-                    >
-                      {_('Select an account to connect')}
-                    </Typography>
-                  )}
-
-                {/* Registration error - show retry option */}
-                {registrationState === 'error' && selectedAccount !== '' && (
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      autoRegisterAttemptedRef.current = null;
-                      setManuallyDisconnected(false);
-                      doRegister(selectedAccount as number);
-                    }}
-                    fullWidth
-                    sx={{ mb: 2 }}
-                  >
-                    {_('Retry Connection')}
+              {/* Registration error - show retry */}
+              {registrationState === 'error' && (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography color="error" sx={{ mb: 2 }}>
+                    {error || _('Connection failed')}
+                  </Typography>
+                  <Button variant="outlined" color="error" onClick={handleConnect}>
+                    {_('Retry')}
                   </Button>
-                )}
+                </Box>
+              )}
 
-                {/* Disconnected (manually or externally) - show connect option */}
-                {registrationState === 'unregistered' &&
-                  selectedAccount !== '' &&
-                  (manuallyDisconnected ||
-                    autoRegisterAttemptedRef.current === selectedAccount) && (
-                    <Button
-                      variant="contained"
-                      onClick={() => {
-                        setManuallyDisconnected(false);
-                        autoRegisterAttemptedRef.current = null;
-                        doRegister(selectedAccount as number);
-                      }}
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    >
-                      {_('Connect')}
-                    </Button>
-                  )}
+              {/* Incoming Call View */}
+              {isRinging && (
+                <IncomingCall
+                  callerNumber={remoteIdentity?.number || currentDestination}
+                  callerName={remoteIdentity?.displayName}
+                  onAnswer={handleAnswer}
+                  onDecline={handleHangup}
+                />
+              )}
 
-                {/* Registered - show dialer */}
-                {registrationState === 'registered' && (
-                  <>
-                    {/* Dialer */}
-                    <TextField
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      placeholder={_('Enter number (e.g., 00306946223761)')}
-                      fullWidth
-                      sx={{ mb: 2 }}
-                      disabled={callState !== 'idle'}
+              {/* In-Call View */}
+              {isInCall && (
+                <InCallView
+                  callState={callState as 'calling' | 'active' | 'held'}
+                  destination={currentDestination || destination}
+                  onHangup={handleHangup}
+                  onSendDtmf={sendDtmf}
+                  isMicMuted={isMuted}
+                  onMicMuteToggle={toggleMute}
+                  speakerVolume={speakerVolume}
+                  onSpeakerVolumeChange={setSpeakerVolume}
+                  isSpeakerMuted={isSpeakerMuted}
+                  onSpeakerMuteToggle={toggleSpeakerMute}
+                />
+              )}
+
+              {/* Idle - Show Tabs (Keypad / History) */}
+              {registrationState === 'registered' && isIdle && (
+                <>
+                  {/* Tab Navigation */}
+                  <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    variant="fullWidth"
+                    sx={{
+                      minHeight: 40,
+                      bgcolor: 'grey.50',
+                      borderBottom: 1,
+                      borderColor: 'divider',
+                      '& .MuiTab-root': {
+                        minHeight: 40,
+                        py: 1,
+                        textTransform: 'none',
+                        fontWeight: 500,
+                      },
+                      '& .Mui-selected': {
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    <Tab
+                      value="keypad"
+                      icon={<DialpadIcon fontSize="small" />}
+                      iconPosition="start"
+                      label={_('Keypad')}
                     />
+                    <Tab
+                      value="history"
+                      icon={<HistoryIcon fontSize="small" />}
+                      iconPosition="start"
+                      label={_('History')}
+                    />
+                  </Tabs>
 
-                    {/* Call Controls */}
-                    {callState === 'idle' ? (
-                      <Button
-                        variant="contained"
-                        color="success"
+                  {/* Keypad View */}
+                  {activeTab === 'keypad' && (
+                    <>
+                      {/* Number Display */}
+                      <NumberDisplay
+                        value={destination}
+                        onChange={setDestination}
+                        onBackspace={handleBackspace}
+                        onCall={handleCall}
+                        placeholder="Enter number"
+                        disabled={false}
+                      />
+
+                      {/* Dial Pad */}
+                      <DialPad onDigit={handleDigit} disabled={false} />
+
+                      {/* Call Button */}
+                      <CallButton
+                        state={destination ? 'idle' : 'disabled'}
                         onClick={handleCall}
                         disabled={!destination}
-                        fullWidth
-                        startIcon={<PhoneIcon />}
-                      >
-                        {_('Call')}
-                      </Button>
-                    ) : (
-                      <Box>
-                        <Typography sx={{ mb: 1, textAlign: 'center' }}>
-                          {getCallStateText()}
-                        </Typography>
+                      />
 
-                        {/* Answer button for incoming calls */}
-                        {callState === 'ringing' && (
-                          <Button
-                            variant="contained"
-                            color="success"
-                            onClick={handleAnswer}
-                            fullWidth
-                            startIcon={<PhoneIcon />}
-                            sx={{ mb: 1 }}
-                          >
-                            {_('Answer')}
-                          </Button>
-                        )}
-
-                        {/* Hangup button */}
-                        <Button
-                          variant="contained"
+                      {/* Error Display */}
+                      {error && (
+                        <Typography
                           color="error"
-                          onClick={handleHangup}
-                          fullWidth
-                          startIcon={<CallEndIcon />}
+                          variant="caption"
+                          sx={{ display: 'block', textAlign: 'center', pb: 2 }}
                         >
-                          {_('Hang Up')}
-                        </Button>
-                      </Box>
-                    )}
-                  </>
-                )}
-              </>
-            )}
+                          {error}
+                        </Typography>
+                      )}
+                    </>
+                  )}
 
-            {/* Error Display */}
-            {error && (
-              <Typography color="error" sx={{ mt: 2 }}>
-                {error}
-              </Typography>
-            )}
-
-            {/* No Accounts Message */}
-            {!loading && retailAccounts.length === 0 && !fetchError && (
-              <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
-                {_('No retail accounts found')}
-              </Typography>
-            )}
-          </Box>
-        </DialogContent>
-      </Dialog>
+                  {/* History View */}
+                  {activeTab === 'history' && (
+                    <CallHistory onRedial={handleRedial} disabled={false} />
+                  )}
+                </>
+              )}
+            </Box>
+          </Paper>
+        </Slide>
+      </ClickAwayListener>
     </>
   );
 };
