@@ -33,6 +33,13 @@ const properties: MyDidsProperties = {
       out: _('Outbound only'),
     },
   },
+  isByon: {
+    label: _('Source'),
+    enum: {
+      0: _('Purchased'),
+      1: _('BYON'),
+    },
+  },
   monthlyPrice: {
     label: _('Monthly Cost'),
   },
@@ -49,6 +56,7 @@ const properties: MyDidsProperties = {
 const columns = [
   'ddiE164',
   'countryName',
+  'isByon',
   'monthlyPrice',
   'assignedAt',
   'nextRenewalAt',

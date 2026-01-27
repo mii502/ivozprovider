@@ -9,6 +9,7 @@ export type MyDidsPropertyList<T> = {
   ddiE164?: T;
   countryName?: T;
   ddiType?: T;
+  isByon?: T;
   monthlyPrice?: T;
   assignedAt?: T;
   nextRenewalAt?: T;
