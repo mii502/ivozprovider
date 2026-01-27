@@ -14,5 +14,8 @@
     "eject": "react-scripts eject",
     "cy:run": "cypress run --browser electron",
     "cy:open": "cypress open"
+  },
+  "dependencies": {
+    "jssip": "^3.10.0"
   }
 }

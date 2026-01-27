@@ -1,6 +1,6 @@
 /**
  * DialPad Component - 12-key phone keypad with Material Design styling and DTMF tones
- * Server path: /opt/irontec/ivozprovider/web/portal/client/src/components/Softphone/DialPad.tsx
+ * Server path: /opt/irontec/ivozprovider/web/portal/user/src/components/Softphone/DialPad.tsx
  * Server: vm-ivozprovider-lab (185.16.41.36)
  * Last updated: 2026-01-27
  */
