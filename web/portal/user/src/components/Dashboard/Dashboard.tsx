@@ -229,7 +229,7 @@ const Dashboard = (props: DashboardProps) => {
       </div>
 
       <div className='card licenses'>
-        <div className='title'>{_('Active call', { count: 2 })}</div>
+        <div className='title'>{_('Monthly calls')}</div>
 
         <div className='radial'>
           <CircleChart {...circleProps} />
